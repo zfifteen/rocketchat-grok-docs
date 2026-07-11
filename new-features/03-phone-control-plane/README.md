@@ -4,7 +4,7 @@
 **Status:** Documentation only (no runtime implementation in this package)  
 **Parent index:** [`../README.md`](../README.md)
 
-/status /new /admin once /cancel + elevation tokens
+`/help` `/status` `/model` `/effort` `/goal` `/new` `/admin once` `/cancel` + elevation tokens
 
 ## Documents in this bundle
 

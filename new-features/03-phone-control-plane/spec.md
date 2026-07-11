@@ -3,9 +3,9 @@
 | Field | Value |
 | --- | --- |
 | **Spec ID** | NF-SPEC-03 |
-| **Version** | 1.1 |
+| **Version** | 1.2 |
 | **Status** | Specification (implementation out of scope for this document package) |
-| **Date** | 2026-07-10 · **Last reviewed:** 2026-07-10 |
+| **Date** | 2026-07-10 · **Last reviewed:** 2026-07-11 (`/model` `/effort` `/goal` + slash taxonomy) |
 | **Prior research** | [`./research.md`](./research.md) |
 | **Test plan** | [`./test-plan.md`](./test-plan.md) (NF-TP-03) |
 | **Implementation plan** | [`./implementation-plan.md`](./implementation-plan.md) (NF-IP-03) |
@@ -49,6 +49,7 @@ Define the engineering contract for a **phone control plane**: deterministic sla
 | G4 | Unknown slash commands never spawn a multi-turn Grok research wake. |
 | G5 | Default remains restricted; elevation is explicit, audited, and room-scoped preferred. |
 | G6 | Non-command messages continue to behave exactly as today’s wake path. |
+| G7 | Principal can pin **model**, **reasoning effort**, and **goal** per room from the phone without editing Mac config. |
 
 ### 2.2 Non-goals
 
@@ -60,6 +61,8 @@ Define the engineering contract for a **phone control plane**: deterministic sla
 | NG4 | Replacing agency `STATE.md` continuity system. |
 | NG5 | Apps-Engine slash autocomplete as a v1 blocker (v1 is operator-native). |
 | NG6 | Implementing this feature in the present documentation goal. |
+| NG7 | **1:1 remote control of every Grok TUI slash command** (themes, vim mode, session pickers, quit/home, plugin market UI, clipboard copy/export, login/logout). Phone control plane is Class A ops grammar — see §6.0 taxonomy. |
+| NG8 | Silently no-op’ing TUI-only commands as if they succeeded. |
 
 ---
 
@@ -73,7 +76,7 @@ Define the engineering contract for a **phone control plane**: deterministic sla
 | **FR-C1** | Only messages from RC user `principal` **shall** invoke control-plane commands or wakes. |
 | **FR-C2** | Before enqueueing a normal wake, the operator **shall** classify principal text as **command** or **content**. |
 | **FR-C3** | Command messages **shall not** spawn Grok CLI research wakes (except `/wake`, `/ask`, `/retry` which explicitly request wake). |
-| **FR-C4** | Unknown commands **shall** reply with a short help/error from `grok` and **shall** mark the message processed without CLI wake. |
+| **FR-C4** | Unknown commands **shall** reply with a short help/error from `grok` that **shall** mention `/help` (or list a subset of commands) and **shall** mark the message processed without CLI wake. |
 
 ### 3.2 Command grammar
 
@@ -81,8 +84,19 @@ Define the engineering contract for a **phone control plane**: deterministic sla
 | --- | --- |
 | **FR-C5** | Commands **shall** match (after trim): `^/(?P<cmd>\S+)(?:\s+(?P<args>.*))?$` or optional alias prefix `!` (`RC_CMD_PREFIXES=/,!`). |
 | **FR-C6** | Command dispatch **shall** be case-insensitive for `cmd`; args **may** be case-sensitive (paths). |
-| **FR-C7** | The v1 command set **shall** include at least: `help`, `status`, `health`, `new`, `session`, `cwd`, `mode`, `admin`, `cancel`, `retry`, `wake`, `ask` (see §6). |
-| **FR-C8** | `/new` and `/session reset` **shall** clear the room’s Grok session pin; cwd pin **should** be retained unless args request clear. |
+| **FR-C7** | The v1 command set **shall** include at least: `help`, `status`, `health`, `new`, `session`, `cwd`, `mode`, `model`, `effort`, `goal`, `admin`, `cancel`, `retry`, `wake`, `ask` (see §6). |
+| **FR-C7a** | `/help` **shall** be a first-class v1 command: principal-only, no Grok CLI wake, reply from `grok` listing the v1 command set with one-line semantics each. |
+| **FR-C7b** | `/help` **should** accept an optional topic (`/help admin`, `/help model`, `/help goal`, …) and return short usage for that command; unknown topic **shall** fall back to the full list (or a one-line “unknown topic” plus full list). |
+| **FR-C7c** | `/help` (and aliases under `RC_CMD_PREFIXES`, e.g. `!help`) **shall** remain available whenever `RC_CONTROL_PLANE` is enabled, including when `RC_ELEVATION=0` (elevation-only disable must not hide help). |
+| **FR-C7d** | `/model` **shall** show the room model pin (or “default”) with no args; `/model <id\|name>` **shall** set a room pin; `/model clear` **shall** clear it. Setting a pin **shall not** require a Grok research wake. |
+| **FR-C7e** | When a room model pin is set, subsequent wakes for that room **shall** pass `-m` / `--model <resolved-id>` via `build_wake_argv` (or equivalent). Invalid / unknown model ids **should** be rejected at pin time if a local catalog is available; otherwise fail on next wake with a clear status error. |
+| **FR-C7f** | `/effort` **shall** show the room effort pin; `/effort <level>` **shall** set it; `/effort clear` **shall** clear it. Accepted levels **shall** include at least: `none`, `minimal`, `low`, `medium`, `high`, `xhigh` (and `max` as alias of `xhigh` if CLI does). |
+| **FR-C7g** | When a room effort pin is set, subsequent wakes **shall** pass `--reasoning-effort` / `--effort <level>` on the argv. |
+| **FR-C7h** | `/goal` **shall** show room goal state; `/goal <objective>` **shall** set `{objective, status: active}`; `/goal status` **shall** report pin + last progress if known; `/goal pause` / `resume` / `clear` **shall** update status or remove the pin without a freeform research mis-route. |
+| **FR-C7i** | While a room goal is `active` (or `paused` for status display only), content wakes in that room **shall** be goal-aware: inject a short durable goal block into the wake prompt (and enable goal tooling when headless CLI exposes it). `clear` / no pin → no goal block. |
+| **FR-C7j** | `/mode` **shall** mean **approval/elevation mode only**. `/model` **shall** mean LLM model. Implementations **shall not** treat them as aliases. |
+| **FR-C7k** | Class D/E TUI or account commands (e.g. `/theme`, `/quit`, `/login`, bare `/always-approve`) **shall not** spawn research wakes. They **shall** either be unknown (→ FR-C4 /help) or an explicit short “unsupported on phone / TUI-only” reply. |
+| **FR-C8** | `/new` and `/session reset` **shall** clear the room’s Grok session pin; cwd pin **should** be retained unless args request clear. Model / effort / goal pins **should** be retained across `/new` unless args request clear (OD-C8). |
 | **FR-C9** | `/cwd pin <path>` **shall** accept only paths that resolve under allowlisted roots (`~/IdeaProjects`, `~/.grok/agency`) after `realpath`; otherwise reject. |
 | **FR-C10** | `/status` **shall** return a markdown mission card for the current room plus global operator health summary. |
 | **FR-C11** | `/health` **shall** report operator WS/health.json freshness and **should** report local RC reachability (`http://127.0.0.1:3000/api/info` or configured base). |
@@ -107,7 +121,7 @@ Define the engineering contract for a **phone control plane**: deterministic sla
 
 | ID | Requirement |
 | --- | --- |
-| **FR-C23** | `/status` card **shall** include: operator online/ws, effective mode + elevation, session id (or none), cwd + resolve reason, last wake time/rc/stopReason if known, queue/lock summary. |
+| **FR-C23** | `/status` card **shall** include: operator online/ws, effective mode + elevation, session id (or none), cwd + resolve reason, **model pin**, **effort pin**, **goal summary** (objective truncated + status), last wake time/rc/stopReason if known, queue/lock summary. |
 | **FR-C24** | Optional pinned status (`RC_STATUS_PIN=1`) **shall** use a single pin updated via `chat.update`, not repeated new posts. |
 | **FR-C25** | Status content **shall not** include secrets or full env. |
 
@@ -202,11 +216,23 @@ effective_mode = admin if elevation_active(room) else resolve_approval_mode(...)
       "mid": "...",
       "ts": "..."
     }
+  },
+  "room_models": { "<roomId>": "grok-build" },
+  "room_effort": { "<roomId>": "high" },
+  "room_goals": {
+    "<roomId>": {
+      "objective": "…",
+      "status": "active",
+      "updated_at": "…",
+      "last_progress": null
+    }
   }
 }
 ```
 
 Store alongside existing session/cwd pins in operator state with atomic write patterns already used by `save_state`.
+
+`build_wake_argv` extension (conceptual): when pins present, append `--model` / `--reasoning-effort` (or `--effort`); merge goal block into prompt file before spawn.
 
 ---
 
@@ -245,20 +271,36 @@ Hourly PGS posts remain a separate path. Control plane **shall not** double-post
 
 ## 6. Interfaces and control surfaces
 
+### 6.0 Slash taxonomy (why not every TUI command)
+
+| Class | Role | Examples | v1 behavior |
+| --- | --- | --- | --- |
+| **A** | Operator control plane | `/help` `/status` `/model` `/effort` `/goal` `/admin*` … | Implement (this table) |
+| **B** | Cheap aliases | `/clear`→`/new`, `/m`→`/model` | Optional aliases |
+| **C** | Content/skill pass-through | `/imagine …` (optional allowlist) | Deferred; if ever, explicit wake |
+| **D** | TUI / UI only | `/theme` `/vim-mode` `/quit` `/sessions` picker | Unsupported short reply or unknown→`/help` |
+| **E** | Account / unrestricted elevation | `/login` `/logout` bare `/always-approve` | Reject; use `/admin once` |
+| **F** | Heavy product | `/loop` scheduler, plugin market, `/call` | Other specs |
+
+Source of TUI catalog (reference only): `~/.grok/docs/user-guide/04-slash-commands.md`.
+
 ### 6.1 Command reference (v1 normative set)
 
 | Command | Args | Behavior | Wakes Grok? |
 | --- | --- | --- | --- |
-| `/help` | — | List commands | No |
-| `/status` | — | Mission card | No |
+| `/help` | `[topic]` optional | List v1 commands + one-line semantics; optional per-command usage (FR-C7a–C7c) | No |
+| `/status` | — | Mission card (incl. model/effort/goal) | No |
 | `/health` | — | Operator/RC health | No |
-| `/new` | — | Clear session pin | No |
+| `/new` | — | Clear session pin (pins: see FR-C8) | No |
 | `/session show` | — | Show session | No |
 | `/session reset` | — | Alias `/new` | No |
 | `/cwd` | — | Show cwd + reason | No |
 | `/cwd pin` | `<path>` | Pin if allowlisted | No |
 | `/cwd clear` | — | Clear pin | No |
-| `/mode` | — | Effective mode + elevation | No |
+| `/mode` | — | Effective **approval** mode + elevation | No |
+| `/model` | `[id\|name\|clear]` | Show / set / clear room model pin (FR-C7d–e); alias `/m` **should** be accepted | No |
+| `/effort` | `[level\|clear]` | Show / set / clear room reasoning-effort pin (FR-C7f–g) | No |
+| `/goal` | `[objective\|status\|pause\|resume\|clear]` | Room goal pin + goal-aware wakes (FR-C7h–i) | No (set/show); content wakes after set **Yes** when principal sends work |
 | `/admin once` | — | Confirm → arm one admin wake | No |
 | `/admin on` | — | Confirm → TTL admin | No |
 | `/admin off` | — | Clear elevation | No |
@@ -295,6 +337,9 @@ Hourly PGS posts remain a separate path. Control plane **shall not** double-post
 ## Mission control — #Prime-Gap-Structure
 - operator: online (pid …, ws ok)
 - approval: restricted (elevation: none)
+- model: grok-build (pinned) | default
+- effort: high (pinned) | default
+- goal: active — Migrate auth module… | none
 - session: 019f4897-… (pinned) | none
 - cwd: …/prime-gap-structure (pinned|map|dm)
 - last wake: <iso> rc=<n> stopReason=<…|unknown>
@@ -309,17 +354,24 @@ Hourly PGS posts remain a separate path. Control plane **shall not** double-post
 
 | Phase | Scope | Exit |
 | --- | --- | --- |
-| **P0** | `/help` `/status` `/health` `/new` `/cwd` `/mode` | No CLI wake; correct state |
+| **P0** | `/help` `/status` `/health` `/new` `/cwd` `/mode` **`/model` `/effort` `/goal`** | No CLI for pins/show; argv wired for model/effort |
 | **P1** | `/admin once` confirm + consume | One elevated wake; then restricted |
 | **P2** | `/cancel` `/retry` | Stop runaway; redo last content |
-| **P3** | Optional pin status; NF-SPEC-02 field alignment | Shared telemetry |
+| **P3** | Optional pin status; NF-SPEC-02 field alignment; richer goal progress | Shared telemetry |
 | **P4** | Apps-Engine slash + buttons | Autocomplete / tap approve |
 
 ### 7.2 Acceptance criteria
 
-- [ ] AC-C1: `/status` returns card &lt;2s; no `wake-run-*.log` created for that message.  
+- [ ] AC-C0: `/help` returns a list of v1 commands (at least `help`, `status`, `health`, `new`, `cwd`, `mode`, `model`, `effort`, `goal`, `admin`, `cancel`, `retry`) in &lt;2s; no `wake-run-*.log` / no Grok CLI for that message (FR-C7a, NFR-C1).  
+- [ ] AC-C0b: `/help admin` (or equivalent topic) returns short usage for admin elevation; unknown topic does not wake CLI (FR-C7b).  
+- [ ] AC-C0c: With `RC_ELEVATION=0`, `/help` still works (FR-C7c).  
+- [ ] AC-C0d: `/model <id>` then content wake → argv includes `--model` (or `-m`) with that id; `/model clear` removes it (FR-C7d–e).  
+- [ ] AC-C0e: `/effort high` then content wake → argv includes `--reasoning-effort` or `--effort high`; invalid level rejected (FR-C7f–g).  
+- [ ] AC-C0f: `/goal Do the thing` sets pin; `/status` shows goal; content wake prompt includes goal block; `/goal clear` removes it (FR-C7h–i).  
+- [ ] AC-C0g: `/mode` and `/model` are distinct; `/theme` does not spawn a research wake (FR-C7j–k).  
+- [ ] AC-C1: `/status` returns card &lt;2s including model/effort/goal fields; no `wake-run-*.log` for that message.  
 - [ ] AC-C2: `/new` clears session pin; next content wake uses new session id.  
-- [ ] AC-C3: `/foo` unknown → help; no Grok CLI process.  
+- [ ] AC-C3: `/foo` unknown → short help/error pointing at `/help`; no Grok CLI process.  
 - [ ] AC-C4: `/admin once` + `yes` + next content → wake argv contains `--always-approve`; following wake does not.  
 - [ ] AC-C5: `/admin once` + `no` → no elevation.  
 - [ ] AC-C6: `/cwd pin /etc` rejected; pin under IdeaProjects accepted if exists.  
@@ -369,6 +421,10 @@ Hourly PGS posts remain a separate path. Control plane **shall not** double-post
 | **OD-C4** | Retention size for `/retry` text | Last 1 message, max 8k chars |
 | **OD-C5** | Extra passphrase for admin | Not required (principal login enough) |
 | **OD-C6** | `/ops` cross-room dashboard | P3+ |
+| **OD-C7** | Headless `/goal` depth: prompt-inject only vs native goal tool / multi-wake orchestrator | Prompt-inject + pin status first |
+| **OD-C8** | Does `/new` clear model/effort/goal pins? | **No** by default; `/new --all` or explicit clears |
+| **OD-C9** | Allowlist any Class C skill pass-throughs | Empty allowlist until explicit decision |
+| **OD-C10** | Model id validation against `grok models` catalog | Soft validate when catalog available |
 
 ---
 

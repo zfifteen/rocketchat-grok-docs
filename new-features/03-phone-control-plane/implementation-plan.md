@@ -8,7 +8,7 @@
 | **Test plan** | [NF-TP-03](./test-plan.md) (**source of truth for validation gates**, incl. TP-C-00) |
 | **Research** | [research.md](./research.md) |
 | **Runtime home** | `~/.grok/agency/ops/rocketchat/wake/` (operator message path, `state.json`, `wake_lib` approval helpers) |
-| **Status** | Implementation-planning documentation only · **Last reviewed:** 2026-07-10 |
+| **Status** | Implementation-planning documentation only · **Last reviewed:** 2026-07-11 (`/model` `/effort` `/goal`) |
 
 ---
 
@@ -20,14 +20,18 @@ Phone-driven Grok lacks deterministic ops controls: session reset, health, and s
 
 ### 1.2 Primary objective
 
-Insert a **principal-only command interceptor** before the Thinking… wake path so `/status`, `/new`, `/admin once`, `/cancel`, etc. execute in-process, with room-scoped elevation tokens audited and non-command wakes unchanged.
+Insert a **principal-only command interceptor** before the Thinking… wake path so `/help`, `/status`, `/model`, `/effort`, `/goal`, `/new`, `/admin once`, `/cancel`, etc. execute in-process, with room-scoped pins + elevation tokens audited and non-command wakes unchanged.
 
 ### 1.3 Success metrics
 
 | Metric | Target |
 | --- | --- |
+| `/help` latency + coverage | &lt; 2 s; lists v1 commands incl. model/effort/goal (AC-C0) |
 | `/status` latency | &lt; 2 s healthy |
-| Unknown `/foo` spawns Grok CLI | Never |
+| `/model` / `/effort` pin → next argv | AC-C0d / AC-C0e |
+| `/goal` pin → prompt goal block | AC-C0f |
+| Unknown `/foo` spawns Grok CLI | Never (points at `/help`) |
+| TUI-only `/theme` spawns research wake | Never |
 | `/admin once` + yes → next wake admin only | Pass AC-C4 |
 | Non-command “hello” | Unchanged Thinking… path |
 | Path traversal pin | Rejected |
@@ -83,13 +87,17 @@ Or single `wake/control_plane.py` if preferred — keep pure functions unit-test
 | --- | --- | --- | --- |
 | P0.1 | `parse_command(text, prefixes)` pure | Table-driven unit tests | TP-C-03 |
 | P0.2 | Interceptor hook in principal handler **before** enqueue | `rc_operator_agent.py` | TP-C-01, TP-C-02, TP-C-18 |
-| P0.3 | `/help`, `/status`, `/health`, `/mode` | Card builders using health.json + state pins | TP-C-04,07,08,21 |
-| P0.4 | `/new`, `/session show|reset` | Clear session pin | TP-C-05, E-C-22 |
+| P0.3 | `/help` (+ optional topic), `/status`, `/health`, `/mode` | Help text module + card builders (health.json + state pins) | TP-C-04,04b,07,08,21 · AC-C0 |
+| P0.3b | `/model` `/effort` show/set/clear + state keys | `room_models` / `room_effort` | TP-C-04c,04d · AC-C0d–e |
+| P0.3c | Extend `build_wake_argv` with model + effort kwargs | `wake_lib.py` | Argv unit tests |
+| P0.3d | `/goal` set/status/pause/resume/clear + prompt goal block | `room_goals` + prompt merge | TP-C-04e · AC-C0f |
+| P0.3e | Class D/E unsupported replies (`/theme`, bare always-approve) | Short reject strings | TP-C-04f · AC-C0g |
+| P0.4 | `/new`, `/session show|reset` | Clear session pin; retain model/effort/goal by default | TP-C-05, E-C-22 |
 | P0.5 | `/cwd`, `/cwd pin`, `/cwd clear` + allowlist | realpath policy | TP-C-06, E-C-01–04 |
 | P0.6 | Contract: unknown command no `wake_grok` | Mock | AC-C3 |
-| P0.7 | Docs: command list in ROCKETCHAT.md | Runbook | Review |
+| P0.7 | Docs: command list in ROCKETCHAT.md (incl. model/effort/goal + “not all TUI cmds”) | Runbook | Review |
 
-**Exit:** P0 commands work live; no CLI for `/status`.  
+**Exit:** P0 commands work live; no CLI for `/status`/`/model` set; next wake honors model/effort pins.  
 **Rollback:** Feature flag `RC_CONTROL_PLANE=0` disables interceptor.
 
 ---
@@ -208,7 +216,7 @@ Or single `wake/control_plane.py` if preferred — keep pure functions unit-test
 ### Cutover
 
 1. Deploy P0 with `RC_CONTROL_PLANE=1` on operator.  
-2. Principal exercises `/status` `/new` `/help` from phone.  
+2. Principal exercises **`/help` first**, then `/status` `/new` from phone.  
 3. Deploy P1; test `/admin once` carefully on non-prod room if available.  
 4. Deploy P2 cancel only after PID tracking verified in logs.  
 5. Document commands in runbook.
@@ -255,7 +263,7 @@ Security hard fails: shell injection, foreign PID kill, non-principal elevation,
 
 | PR | Scope |
 | --- | --- |
-| PR1 | Parse + interceptor skeleton + `/help` `/status` `/health` (flag default on in dev) |
+| PR1 | Parse + interceptor skeleton + **`/help`** (list + topic) + `/status` `/health` + **`/model` `/effort` `/goal`** pins (flag default on in dev) |
 | PR2 | `/new` `/cwd` allowlist + tests |
 | PR3 | Elevation FSM + effective mode wire |
 | PR4 | `/cancel` `/retry` `/wake` + PID tracking |

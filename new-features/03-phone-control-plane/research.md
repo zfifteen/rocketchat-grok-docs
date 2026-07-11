@@ -1,7 +1,7 @@
 # Feature 3 — Phone control plane (slash commands, approval cards, room mission control)
 
 **Status:** Research only (no runtime implementation in this document set)  
-**Date:** 2026-07-10 · **Last reviewed:** 2026-07-10  
+**Date:** 2026-07-10 · **Last reviewed:** 2026-07-11 (`/model` `/effort` `/goal` + slash taxonomy)  
 **Stack baseline:** Principal-only wakes; per-room Grok session pins + cwd pins; approval modes IMP-01; `health.json` + IMP-12 watchdog; channel map `channel_projects.json`; multi-room operator WebSocket  
 **Product thesis:** Rocket.Chat is not only a chat mirror of Grok — it is the **remote console** for the principal Mac / agency program.
 
@@ -106,16 +106,25 @@ Commands are **principal messages** that start with `/` (or a configurable prefi
 
 | Command | Effect | Room scope |
 | --- | --- | --- |
-| `/help` | List commands + short semantics | any |
-| `/status` | Card: health, session, cwd, mode, last wake rc/stopReason, lock | current room + global health |
+| `/help` | **First-class:** list v1 commands + one-line semantics; optional `/help <cmd>` usage | any (even if elevation off) |
+| `/status` | Card: health, session, cwd, mode, **model**, **effort**, **goal**, last wake rc/stopReason, lock | current room + global health |
 | `/health` | Operator WS + Docker reachability summary (local checks) | any |
-| `/new` | Clear room session pin (+ optional cwd pin keep) | current |
+| `/new` | Clear room session pin (+ optional cwd pin keep); **does not** clear model/effort pins by default | current |
 | `/session show` | Print session id / age | current |
 | `/session reset` | Alias of `/new` | current |
 | `/cwd` | Show resolved cwd + reason (map/pin/dm) | current |
 | `/cwd pin <path>` | Pin cwd if path exists and under allowlist | current |
 | `/cwd clear` | Drop cwd pin | current |
-| `/mode` | Show effective approval mode | current |
+| `/mode` | Show effective **approval** mode + elevation (not LLM “model”) | current |
+| `/model` | Show or pin room LLM model for subsequent wakes (`--model`) | current |
+| `/model <id\|name>` | Set pin; optional second token effort if CLI allows | current |
+| `/model clear` | Drop model pin → operator/env default | current |
+| `/effort` | Show room reasoning-effort pin | current |
+| `/effort <level>` | Pin effort: `none`/`minimal`/`low`/`medium`/`high`/`xhigh`/`max` → `--reasoning-effort` / `--effort` | current |
+| `/effort clear` | Drop effort pin | current |
+| `/goal` | Show room goal pin / last known status | current |
+| `/goal <objective>` | Set room goal pin; next wakes carry goal context (see §3.1b) | current |
+| `/goal status` \| `pause` \| `resume` \| `clear` | Manage room goal pin (map of TUI `/goal` subcommands) | current |
 | `/admin on` | Request elevation (see cards) | current / global policy |
 | `/admin off` | Drop elevation | current |
 | `/admin once` | Next wake only admin | current |
@@ -130,13 +139,46 @@ Commands are **principal messages** that start with `/` (or a configurable prefi
 2. Trim; match `^/(?P<cmd>\S+)(?:\s+(?P<args>.*))?$`.  
 3. Unknown command → short help error **without** spawning Grok (fail closed).  
 4. Commands that mutate state write operator log line + optional confirmation bubble from `grok`.  
-5. `/new` must **not** depend on model interpreting natural language.
+5. `/new` must **not** depend on model interpreting natural language.  
+6. **Name collision:** `/mode` = approval elevation surface; `/model` = LLM model pin. Never alias them.
 
 #### Allowlist for `/cwd pin`
 
 - Under `~/IdeaProjects/` or `~/.grok/agency` only.  
 - Reject `..`, symlinks escaping, home root, `/`, secrets paths.  
 - Align with blast-radius goals of IMP-01.
+
+#### 3.1b Room pins: model / effort / goal
+
+These map Grok CLI **session controls** that the TUI exposes as `/model`, `/effort`, `/goal` onto **per-room operator state**, because Rocket.Chat wakes are headless subprocesses (not a live TUI session).
+
+| Pin | Operator state (conceptual) | Applied on next `build_wake_argv` |
+| --- | --- | --- |
+| Model | `room_models[roomId]` | `-m` / `--model <id>` when set |
+| Effort | `room_effort[roomId]` | `--reasoning-effort` / `--effort <level>` when set |
+| Goal | `room_goals[roomId] = { objective, status, updated_at }` | Prompt preamble and/or goal-tool enablement when CLI supports it; at minimum inject durable “active goal” lines into the wake prompt file so headless runs stay goal-aware |
+
+**Goal note:** Full interactive TUI goal automation (`update_goal` tool, multi-turn autonomy inside one process) is not identical to multi-wake RC. v1 **shall** pin objective + status and make subsequent room wakes goal-aware; deep goal-tool parity is OD-C7 if headless CLI lacks a single-flag equivalent.
+
+#### 3.1c Why not “all” Grok TUI slash commands?
+
+The Grok Build TUI advertises a large slash menu (session pickers, themes, plugins, vim mode, `/quit`, …). The phone control plane is **not** a remote TUI keyboard — it is an **operator-native grammar** for principal-safe, room-scoped ops on headless wakes.
+
+| Class | Examples | RC policy |
+| --- | --- | --- |
+| **A — Control plane (v1)** | `/help` `/status` `/health` `/new` `/cwd` `/mode` `/model` `/effort` `/goal` `/admin*` `/cancel` `/retry` `/wake` `/ask` | Deterministic operator handlers; no surprise research wake |
+| **B — Map when cheap** | `/clear`→`/new`, `/m`→`/model`, TUI `/session-info` fields → `/status` | Aliases + card fields |
+| **C — Pass-through as wake content (optional later)** | `/imagine …`, `/remember …`, freeform skill names | Only if explicitly allowlisted; still a **wake**, not silent magic |
+| **D — TUI / UI-only (do not implement as no-ops that lie)** | `/theme` `/vim-mode` `/multiline` `/compact-mode` `/sessions` (picker) `/home` `/quit` `/copy` `/export` (clipboard) `/settings` modals | Reply: “TUI-only; use Mac Grok or N/A on phone” **or** omit from `/help` and treat as unknown → `/help` |
+| **E — Security / account (never from phone v1)** | `/login` `/logout` `/privacy` raw `/always-approve` without confirm | Reject; elevation stays `/admin once`/`on` with confirm |
+| **F — Heavy product (deferred)** | `/loop` (scheduler), full `/plugins`/`/marketplace`, `/plan` UX, voice `/call` | Separate specs (scheduler, Feature 1, etc.) |
+
+**Principles:**
+
+1. **Fail closed:** unknown `/foo` never becomes a multi-hour research wake.  
+2. **No fake parity:** do not advertise `/theme` as “supported” if it cannot change anything on the phone.  
+3. **Prefer room pins + argv** over re-implementing the entire pager/shell slash router.  
+4. **Expand Class A deliberately** (as with `/model` `/effort` `/goal`) when there is a clear headless mapping and phone value.
 
 ---
 
@@ -309,7 +351,10 @@ Elevation records in `state.json` with TTL and remaining uses.
 3. Retention of last non-command message for `/retry` — privacy vs utility?  
 4. Expose Docker/ngrok status in `/health` (local curls) or keep health.json-only?  
 5. Do channel non-admin users ever exist later? (Today principal-only — design stays principal-only.)  
-6. Should elevation require a typed passphrase from secrets (extra safety) or is principal login enough?
+6. Should elevation require a typed passphrase from secrets (extra safety) or is principal login enough?  
+7. How deep should `/goal` go on headless multi-wake RC (prompt inject only vs native goal tool / orchestrator)? See OD-C7.  
+8. Which Class C skills (if any) ever get phone pass-through allowlist? Default: none.  
+9. Should `/new` ever clear model/effort/goal (OD-C8 default: no)?
 
 ---
 
@@ -323,16 +368,17 @@ Elevation records in `state.json` with TTL and remaining uses.
 
 | Phase | Deliverable | Exit criteria |
 | --- | --- | --- |
-| **P0** | `/help`, `/status`, `/health`, `/new`, `/cwd`, `/mode` | No Grok spawn; correct state display |
+| **P0** | `/help`, `/status`, `/health`, `/new`, `/cwd`, `/mode`, **`/model`**, **`/effort`**, **`/goal` show/set/clear** | No Grok spawn for pins; argv wired for model/effort |
 | **P1** | `/admin once` + confirm + consume on next wake | Restricted default; one elevated wake works |
 | **P2** | `/cancel`, `/retry` | Runaway wake stoppable from phone |
-| **P3** | Optional pinned status; Feature 2 telemetry fields in `/status` | Single schema |
+| **P3** | Optional pinned status; Feature 2 telemetry; richer `/goal` status | Single schema |
 | **P4** | Apps-Engine slash + buttons | Autocomplete + tap Approve |
 
 ### Success signals
 
-1. From phone, `/status` answers in &lt;2s without a full research wake.  
+1. From phone, **`/help`** lists the v1 command set in &lt;2s without a research wake; **`/status`** answers in &lt;2s without a full research wake.  
 2. `/new` guarantees next message is a fresh session (no stale resume).  
+2b. `/model` and `/effort` pin room CLI args; next content wake uses them; `/goal` pins an objective visible on `/status` and in subsequent wake context.
 3. Principal can elevate **one** wake without editing launchd.  
 4. Unknown `/foo` never triggers a 30s Grok run.  
 5. Audit log shows every elevation grant/consume.  

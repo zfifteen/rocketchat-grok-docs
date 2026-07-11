@@ -9,7 +9,7 @@
 | **Research** | [`./research.md`](./research.md) |
 | **Related** | IMP-01 approval modes, `wake_lib.resolve_approval_mode`, `state.json` pins, `health.json` |
 | **Type** | Unit (parse/FSM/allowlist) + contract routing + optional live RC command probes |
-| **Status** | Test-planning documentation only · **Last reviewed:** 2026-07-10 |
+| **Status** | Test-planning documentation only · **Last reviewed:** 2026-07-11 (`/model` `/effort` `/goal`) |
 | **Flags under test** | `RC_CONTROL_PLANE`, `RC_ELEVATION`, `RC_CMD_PREFIXES`, `RC_ADMIN_CONFIRM_S`, `RC_ADMIN_TTL_S`, `RC_STATUS_PIN` |
 
 ---
@@ -19,7 +19,9 @@
 ### 1.1 In scope
 
 - Principal-only command vs content routing  
-- v1 command set behavior (help/status/health/new/cwd/mode/admin/cancel/retry/wake/ask)  
+- v1 command set behavior (help/status/health/new/cwd/mode/**model/effort/goal**/admin/cancel/retry/wake/ask)  
+- Room pins for model/effort/goal applied on next wake argv / prompt  
+- TUI-only commands do not research-wake (taxonomy Class D/E)
 - Elevation arming: confirm, once consume, TTL, deny, audit  
 - Path allowlist for `/cwd pin`  
 - Non-command wake path unchanged  
@@ -107,22 +109,68 @@
 | **Expected** | Correct cmd/args; `!` alias works; `/` alone unknown; content not command (FR-C5–C6). |
 | **Pass** | Parser unit table |
 
-### TP-C-04 — Help lists v1 commands
+### TP-C-04 — `/help` lists v1 commands (first-class)
 
 | | |
 | --- | --- |
-| **Steps** | `/help` |
-| **Expected** | Mentions status, new, admin, cancel, cwd at minimum (FR-C7). |
-| **Pass** | Substring checks |
+| **Phase** | P0 |
+| **Steps** | A) `/help`. B) `!help` if `!` in `RC_CMD_PREFIXES`. C) `/HELP` (case). |
+| **Expected** | Reply from `grok` lists v1 set with one-line semantics each; includes at least help, status, health, new, cwd, mode, **model, effort, goal**, admin, cancel, retry (FR-C7, FR-C7a). No Thinking… research wake; no `wake-run-*.log` (FR-C3). Latency &lt;2s healthy (NFR-C1, AC-C0). |
+| **Pass** | Substring checks + no CLI spawn |
+
+### TP-C-04b — `/help` topic + elevation-off
+
+| | |
+| --- | --- |
+| **Phase** | P0 |
+| **Steps** | A) `/help admin`. B) `/help notacommand`. C) With `RC_ELEVATION=0`, send `/help`. |
+| **Expected** | A) Short usage for admin elevation (`once`/`on`/`off` / confirm). B) Unknown topic → full list or explicit unknown + full list; no CLI wake (FR-C7b). C) Help still works when elevation disabled (FR-C7c, AC-C0b–C0c). |
+| **Pass** | Body + env matrix |
+
+### TP-C-04c — `/model` pin → argv
+
+| | |
+| --- | --- |
+| **Phase** | P0 |
+| **Steps** | A) `/model` (show). B) `/model grok-build` (or known id). C) content `hello`. D) `/model clear`. E) content again. |
+| **Expected** | A/B no CLI research wake. C argv includes `-m`/`--model` with pinned id (FR-C7d–e, AC-C0d). D clears pin. E no model flag (or env default only). |
+| **Pass** | State + argv capture |
+
+### TP-C-04d — `/effort` pin → argv
+
+| | |
+| --- | --- |
+| **Phase** | P0 |
+| **Steps** | A) `/effort high`. B) content wake. C) `/effort notalevel`. D) `/effort clear`. |
+| **Expected** | B argv includes `--reasoning-effort` or `--effort high` (FR-C7f–g, AC-C0e). C reject, no pin change. D clears. |
+| **Pass** | Argv + error body |
+
+### TP-C-04e — `/goal` pin + goal-aware wake
+
+| | |
+| --- | --- |
+| **Phase** | P0 |
+| **Steps** | A) `/goal Ship the control plane docs`. B) `/status`. C) content `continue`. D) `/goal status`. E) `/goal clear`. |
+| **Expected** | A sets pin active. B card shows goal summary (FR-C23). C wake prompt contains objective block (FR-C7i, AC-C0f). D reports status. E removes pin; later wake has no goal block. |
+| **Pass** | State + prompt file / argv side effects |
+
+### TP-C-04f — `/mode` ≠ `/model`; TUI-only no wake
+
+| | |
+| --- | --- |
+| **Phase** | P0 |
+| **Steps** | A) `/mode`. B) `/model`. C) `/theme`. D) `/quit`. |
+| **Expected** | A approval/elevation. B model pin surface. C/D unsupported or unknown→`/help`; **no** multi-turn research wake (FR-C7j–k, AC-C0g). |
+| **Pass** | Body class + wake_spawned=false |
 
 ### TP-C-05 — /new clears session pin
 
 | | |
 | --- | --- |
 | **Phase** | P0 |
-| **Preconditions** | Room has session pin S1 |
+| **Preconditions** | Room has session pin S1; optional model/effort/goal pins set |
 | **Steps** | `/new`; then content wake. |
-| **Expected** | Pin cleared; next wake not `--resume S1` (new session) (FR-C8, AC-C2). |
+| **Expected** | Session pin cleared; next wake not `--resume S1` (new session) (FR-C8, AC-C2). Model/effort/goal pins **retained** by default (OD-C8) unless product chooses otherwise. |
 | **Pass** | State + argv |
 
 ### TP-C-06 — /cwd pin allowlist
@@ -301,6 +349,11 @@
 | **E-C-15** | Help spam loop `/help` × 50 | Rate limit (NFR-C4) |
 | **E-C-16** | Mobile sends fullwidth `／status` | Unknown or normalized—document |
 | **E-C-17** | Leading slash with zero-width chars | Reject unknown |
+| **E-C-24** | `/model` with spaces / display name | Resolve case-insensitively when catalog available; else store raw |
+| **E-C-25** | `/effort` on non-reasoning model | Pin allowed; CLI may ignore — document in `/status` if known |
+| **E-C-26** | `/goal` with empty args | Show status (same as bare `/goal`) |
+| **E-C-27** | Room A model pin does not affect room B | Isolation |
+| **E-C-28** | `/m` alias for `/model` | Accepted if Class B aliases enabled |
 | **E-C-18** | state.json corrupt | Defaults; no crash; log |
 | **E-C-19** | Concurrent commands + content in same room | Serialized by room lock |
 | **E-C-20** | `/status` during active wake | Shows draining/phase if available; no deadlock |
