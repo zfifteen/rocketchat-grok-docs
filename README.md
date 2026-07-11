@@ -27,7 +27,8 @@ This repo only documents them so the spread is navigable.
 6. **[Improvements backlog](docs/improvements/INDEX.md)** — ranked suggestions; each has requirements + test plan  
 7. **[Voice call implementation plan](docs/implementation-plan-voice-calls.md)** — Path C fix framing (historical / lab)  
 8. **[Voice/media research path](docs/research-voice-media-path.md)** — **recommended** architecture (RC Call → SFU/agent → Grok Voice)  
-9. **[Preflight voice test protocol](docs/preflight-voice-test-protocol.md)** — test **before** principal Call (T0–T2 agent-run; T5 you)
+9. **[Preflight voice test protocol](docs/preflight-voice-test-protocol.md)** — test **before** principal Call (T0–T2 agent-run; T5 you)  
+10. **[New features index](new-features/README.md)** — one numbered subfolder per product feature (related docs co-located): **[01 voice Call](new-features/01-true-voice-in-rc-call/)**, **[02 streaming Thinking](new-features/02-streaming-thinking-telemetry/)**, **[03 phone control plane](new-features/03-phone-control-plane/)**, **[04 agy collab channel](new-features/04-agy-rocketchat-collab/)** (IP deferred); docs only
 
 ---
 

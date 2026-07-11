@@ -2,8 +2,8 @@
 
 **Purpose:** Validate (or falsify) Rocket.Chat ↔ Grok voice **before the principal has to pick up a live call**.  
 **Hard requirement:** Final acceptance still requires **Call in Rocket.Chat** on mobile — but most failure modes can be found earlier.  
-**Status:** Protocol active; **T2 PASS 2026-07-11** on lobby-free voice room path (RC Call VideoConf → `http://LAN:8090/Agency{callId}`).  
-**Principal T5:** ready when operator + voice-room are up; phone on same Wi‑Fi as Mac.
+**Status:** Protocol active; **T2 PASS + criterion3 PASS** (re-verified 2026-07-11 evening) on lobby-free voice room path (RC Call VideoConf → `http://LAN:8090/Agency{callId}`).  
+**Principal T5:** **READY** — operator + voice-room up; phone on same Wi‑Fi as Mac (`10.71.11.69`).
 
 Related: [research-voice-media-path.md](research-voice-media-path.md), [implementation-plan-voice-calls.md](implementation-plan-voice-calls.md)
 
@@ -184,11 +184,13 @@ Current evidence says: **do not spend principal time on Path C T5.**
 
 - [x] T0 pass  
 - [x] T1 pass  
-- [x] T2 run  
-- [x] T2 **fail documented** (2026-07-11)  
-- [ ] Media fix or stack change  
-- [ ] T2 re-run **PASS**  
-- [ ] Only then: invite principal T5  
+- [x] T2 **FAIL** on public meet.jit.si (lobby) documented  
+- [x] Media path retargeted to lobby-free **voice_room** (`:8090`)  
+- [x] T2 re-run **PASS** (`remote_rms ≈ 0.28` ≥ 0.008)  
+- [x] Criterion3 **honest media**: `join room … name=Grok` in voice-room.log + principal remote RMS ≥ 0.008 while bot greets (`media_ok=1`)  
+- [x] Bot prefer_loopback nav + refuse greeting until localReady/selfId  
+- [x] Operator launchd `PYTHON_BIN` → rocketchat `.venv` (playwright)  
+- [x] Invite principal **T5**
 
 ---
 
@@ -199,28 +201,23 @@ Current evidence says: **do not spend principal time on Path C T5.**
 | Dual-peer probe script | `docs/tools/preflight_dual_peer_jitsi_audio.py` |
 | Latest report | `~/logs/rocketchat-dm-wake/preflight/dual-peer-report.json` |
 | Tone / capture | `~/logs/rocketchat-dm-wake/preflight/` |
+| Voice room server | `~/.grok/agency/ops/rocketchat/voice_room/` |
+| Call media bot | `~/.grok/agency/ops/rocketchat/call/rc_call_bot.py` |
 
 ---
 
 ## 10. Bottom line for you
 
-**You do not need to test first.**  
+**Ready for your Call test (T5).**  
 
-We already showed:
+Verified just before invite:
 
-1. RC Call **API works** (T1).  
-2. Path C media **fails before audio** (T2): public **meet.jit.si lobby / no moderator** — both bot and simulated principal stuck in “Asking to join meeting…”.  
-3. Local “played greeting” is **not** proof of a live conference.  
+1. RC Call **API works** (T1) — join URL is `http://10.71.11.69:8090/Agency{callId}` (not public meet.jit.si).  
+2. Dual-peer media **PASS** (T2): remote RMS ~0.28 on voice room.  
+3. Live bot **join + “Hello, Grok speaking.”** without FATAL (criterion3).  
+4. Services: RC healthy, operator launchd, voice_room launchd (single instance), Mac LAN `10.71.11.69`.
 
-**Unblocks (implementation session later — not done here):**
-
-| Fix path | What changes |
-| --- | --- |
-| A | Self-host Jitsi (or JaaS) with **no lobby** / bot is moderator; keep RC Call |
-| B | Enable Jitsi **JWT** (`jitsi_auth_token` + app id/secret) with moderator for `grok` |
-| C | **Recommended:** RC Call provider → LiveKit + Grok Voice agent (no meet.jit.si) |
-
-**Do not** use principal phone Calls to debug Path C on public meet.jit.si until T2 is green.
+**How to test:** same Wi‑Fi as the Mac → DM `grok` → **Call** → wait for greeting → speak after it.
 
 When T2 is green on a chosen stack, **then** your Call is the final gate (T5).
 

@@ -2,6 +2,10 @@
 
 ## 2026-07-10
 
+- **New-features layout reorg:** each feature is its own subfolder under [new-features/](new-features/README.md) (`01`–`03` full chain co-located; `04` research-only). Top-level index is navigable; structural tests assert bundle layout.
+- **New feature research (4):** [new-features/04-agy-rocketchat-collab/](new-features/04-agy-rocketchat-collab/) — long-horizon Grok↔Antigravity collab via Rocket.Chat; dual account **`agy`** + @mention handoffs; many-turn durability; draft **[`profiles/`](new-features/04-agy-rocketchat-collab/profiles/)** AGENTS/agent identity for collab. Research only. Structural tests: `tests/test_feature4_agy_collab_research.py`.
+- **NF-SPEC-04:** [new-features/04-agy-rocketchat-collab/spec.md](new-features/04-agy-rocketchat-collab/spec.md) — meticulous dual-peer @mention collab technical specification (documentation only; bundle layout).
+- **NF-TP-04:** [new-features/04-agy-rocketchat-collab/test-plan.md](new-features/04-agy-rocketchat-collab/test-plan.md) — thorough test plan for dual-peer collab (documentation only).
 - **IMP-15 evidence-first:** `test_imp15_compose_secrets_dry` runs shipped
   `generate_compose_env.sh` (mode 600) + live `backup_mongo.sh` (non-empty tar) +
   operations/filesystem-map upgrade docs; usability PASS records `backup_bytes`.

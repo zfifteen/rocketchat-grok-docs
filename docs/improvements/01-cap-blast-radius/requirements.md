@@ -77,7 +77,10 @@ There is no config distinction between “answer a question” and “modify sys
 
 - `wake_lib.resolve_approval_mode` / `approval_mode_cli_flags` / `build_wake_argv(approval_mode=…)`
 - Operator, poll, and call bot pass effective mode; logs include `approval_mode=…`
-- Restricted CLI: `--permission-mode acceptEdits` (not `--always-approve`)
+- Restricted CLI: `--permission-mode auto` (not `--always-approve`)
+- **Hotfix 2026-07-10:** `acceptEdits` is **not** headless-safe. Grok returns
+  `stopReason=Cancelled` with an empty reply file → operator posts
+  "(No reply file content from the wake...)". Switched restricted → `auto`.
 - Admin CLI: `--always-approve`; default `RC_WAKE_ADMIN_DMS_ONLY=1`
 - Tests: `test_approval_modes_imp01` + integration argv assertions
 - launchd: `RC_WAKE_APPROVAL_MODE=restricted`
