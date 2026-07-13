@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-12
+
+- **NF-SPEC-10 + NF-IP-10 + NF-TP-10 — Lead–peer full collab.** [new-features/10-lead-peer-full-collab/](new-features/10-lead-peer-full-collab/) — full documentation chain: protocol spec, `!goal` implementation ladder (GOAL-00…22), meticulous [test-plan.md](new-features/10-lead-peer-full-collab/test-plan.md) (L0–L6, AC traceability, per-GOAL gates, live opt-in).
+- **Program goal (parked): install refactor → public share.** [docs/goals/install-refactor-then-public-share.md](docs/goals/install-refactor-then-public-share.md) — local install/config cleanup first, packaging only after laptop green; Tier A product sketch; Phase 0–3; resume checklist. Linked from README. No implementation this day.
+- **NF-06…09 docs packs** under [new-features/](new-features/) (reactions, outbound Imagine path, DM health card, agy collab enablement) from principal enhancement list #11/#13/#15/#16.
+- **Operator defaults:** `RC_WAKE_MAX_TURNS` raised 12 → **100** (code, launchd, live). Control plane help/docs prefer **`!` prefix** (Rocket.Chat steals `/` via rocket.cat).
+- **NF-05 runtime shipped (permanent inbound attachments):** Live operator now rehydrates with retries, downloads images/docs under policy (same-host, size cap, thumb skip), injects local paths into the wake prompt, and `reply_prompt.txt` requires `read_file` before “I can’t view attachments.” Runtime: `~/.grok/agency/ops/rocketchat/wake/{wake_lib,rc_operator_agent,reply_prompt}.txt`; tests: `ops/rocketchat/tests/test_nf05_reading_attachments.py` (13 passed). Docs: [message-flow §F](docs/message-flow.md), [feature 05](new-features/05-reading-attachments/). Operator launchd restarted.
+
+## 2026-07-11
+
+- **New feature 05 (reading attachments):** [new-features/05-reading-attachments/](new-features/05-reading-attachments/) full documentation chain — research, **NF-SPEC-05**, **NF-TP-05**, **NF-IP-05**. Covers inbound Rocket.Chat pictures/files: rehydrate → download under policy → path inject → Grok `read_file`; grounded in live operator code + 2026-07-11 DM attach evidence (caption-only prompt, thumb download, partial image pipeline). Structural tests: `tests/test_feature5_reading_attachments.py`. Index/README updated; ship-order note **2 → 5 → 3 → 1**.
+
 ## 2026-07-10
 
 - **New-features layout reorg:** each feature is its own subfolder under [new-features/](new-features/README.md) (`01`–`03` full chain co-located; `04` research-only). Top-level index is navigable; structural tests assert bundle layout.

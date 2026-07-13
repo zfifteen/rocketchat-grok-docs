@@ -25,10 +25,11 @@ This repo only documents them so the spread is navigable.
 4. **[Operations](docs/operations.md)** — status, restart, tests, common fixes  
 5. **[Related systems](docs/related-systems.md)** — agency spine, PGS hourly notify, Twilio  
 6. **[Improvements backlog](docs/improvements/INDEX.md)** — ranked suggestions; each has requirements + test plan  
-7. **[Voice call implementation plan](docs/implementation-plan-voice-calls.md)** — Path C fix framing (historical / lab)  
-8. **[Voice/media research path](docs/research-voice-media-path.md)** — **recommended** architecture (RC Call → SFU/agent → Grok Voice)  
-9. **[Preflight voice test protocol](docs/preflight-voice-test-protocol.md)** — test **before** principal Call (T0–T2 agent-run; T5 you)  
-10. **[New features index](new-features/README.md)** — one numbered subfolder per product feature (related docs co-located): **[01 voice Call](new-features/01-true-voice-in-rc-call/)**, **[02 streaming Thinking](new-features/02-streaming-thinking-telemetry/)**, **[03 phone control plane](new-features/03-phone-control-plane/)**, **[04 agy collab channel](new-features/04-agy-rocketchat-collab/)** (IP deferred); docs only
+7. **[Goal: install refactor → public share](docs/goals/install-refactor-then-public-share.md)** — **parked program** (local config first, package later; not started)  
+8. **[Voice call implementation plan](docs/implementation-plan-voice-calls.md)** — Path C fix framing (historical / lab)  
+9. **[Voice/media research path](docs/research-voice-media-path.md)** — **recommended** architecture (RC Call → SFU/agent → Grok Voice)  
+10. **[Preflight voice test protocol](docs/preflight-voice-test-protocol.md)** — test **before** principal Call (T0–T2 agent-run; T5 you)  
+11. **[New features index](new-features/README.md)** — one numbered subfolder per product feature (related docs co-located): **[01 voice Call](new-features/01-true-voice-in-rc-call/)**, **[02 streaming Thinking](new-features/02-streaming-thinking-telemetry/)**, **[03 phone control plane](new-features/03-phone-control-plane/)**, **[04 agy collab](new-features/04-agy-rocketchat-collab/)**, **[10 lead–peer full collab](new-features/10-lead-peer-full-collab/)** (**NF-SPEC-10**), **[05 reading attachments](new-features/05-reading-attachments/)**; docs only
 
 ---
 
