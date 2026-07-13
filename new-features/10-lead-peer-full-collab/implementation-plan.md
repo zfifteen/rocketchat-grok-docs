@@ -7,7 +7,7 @@
 | **Test plan** | [test-plan.md](./test-plan.md) (**NF-TP-10** — authoritative case list; per-GOAL gates in §2.3) |
 | **Prior** | [NF-SPEC-04](../04-agy-rocketchat-collab/spec.md), [NF-SPEC-09](../09-agy-collab-enablement/spec.md), partial `rc_collab.py` |
 | **Runtime home** | `~/.grok/agency/ops/rocketchat/wake/` |
-| **Status** | Implementation planning · **Created:** 2026-07-12 |
+| **Status** | Implementation planning · **Created:** 2026-07-12 · **Rev 1.1:** security requirements from [REVIEW.md](./REVIEW.md) folded into goals |
 | **Optimized for** | Rocket.Chat control plane **`!goal`** (see §2) |
 
 ---
@@ -180,15 +180,15 @@ NF-IP-10 GOAL-00: Ensure NF-SPEC-10 and NF-IP-10 are linked from new-features in
 **`!goal` objective:**
 
 ```text
-NF-IP-10 GOAL-01: In rc_collab.py implement lead_peer_full classifier pure functions per NF-SPEC-10 §7: CollabAction types; untagged principal → LeadIntake; principal untagged + active epoch → LeadSteer; grok@agy → Handoff; agy@grok → Handoff; self-mention Ignore; both mentions Reject. No network. Unit-testable without RC.
+NF-IP-10 GOAL-01: In rc_collab.py implement lead_peer_full classifier per NF-SPEC-10 §7 (v1.1): allowlist first; agent !collab → Ignore (no control); principal !collab → ControlPlane; untagged principal → LeadIntake/Steer; grok@agy / agy@grok handoffs; agent dual-mention both → Reject; self-mention Ignore. Unit tests including TP-10-U-09f/g. No network.
 ```
 
 | | |
 | --- | --- |
-| **Scope** | Pure classify API + helpers |
+| **Scope** | Pure classify API + helpers (security order) |
 | **Out** | Operator wiring, REST, CLI |
 | **Files** | `wake/rc_collab.py`, tests under `ops/rocketchat/tests/` |
-| **Verify** | `python3 -m pytest … -k collab_classif` or new test module exit 0 |
+| **Verify** | pytest TP-10-U-01…U-09g green |
 | **Next** | GOAL-02 |
 
 ---
@@ -216,33 +216,33 @@ NF-IP-10 GOAL-02: Implement epoch helpers in rc_collab.py / state accessors: ope
 **`!goal` objective:**
 
 ```text
-NF-IP-10 GOAL-03: Implement peer_bar can_close and is_substantive_peer_body per NF-SPEC-10 §8. LGTM-only must not count. Trivial bypass via profile regex. Unit tests only; no operator wiring yet.
+NF-IP-10 GOAL-03: Implement peer_bar can_close and is_substantive_peer_body per NF-SPEC-10 §8 v1.1. LGTM-only must not count. Trivial: trivial_requires_explicit default; !collab trivial only; reject "Fix the world: build…" gaming (FR-B30–B33). Unit tests TP-10-U-30…U-34c.
 ```
 
 | | |
 | --- | --- |
-| **Scope** | `can_close`, substantive detection |
+| **Scope** | `can_close`, substantive, trivial anti-gaming |
 | **Out** | Runtime Done enforcement (GOAL-13) |
 | **Files** | `rc_collab.py`, tests |
-| **Verify** | Tests: LGTM false; long structured true; trivial bypass |
+| **Verify** | TP-10-U-30…U-34c green |
 | **Next** | GOAL-04 |
 
 ---
 
-### GOAL-04 — Footer parse/strip
+### GOAL-04 — Footer parse/strip + trust boundary
 
 **`!goal` objective:**
 
 ```text
-NF-IP-10 GOAL-04: Implement parse_rc_collab_footer and strip_footer per NF-SPEC-10 §10.4. Invalid footer must not raise. Handoff in footer alone must not imply enqueue (document in docstring). Unit tests.
+NF-IP-10 GOAL-04: Implement parse/strip footer per NF-SPEC-10 §10.4 v1.1 FR-F1–F8: only trust footer from current wake reply+target role match; ignore footer in principal goals; strip fences from inject history. sanitize_owned_paths under cwd (FR-S4–S6). Unit tests TP-10-U-50…U-57.
 ```
 
 | | |
 | --- | --- |
-| **Scope** | Parse/strip only |
-| **Out** | Inject text, operator |
+| **Scope** | Parse/strip + path sandbox helpers |
+| **Out** | Inject wiring in operator |
 | **Files** | `rc_collab.py`, tests |
-| **Verify** | Round-trip parse; strip leaves clean body |
+| **Verify** | TP-10-U-50…U-57 green |
 | **Next** | GOAL-05 |
 
 ---
@@ -341,14 +341,14 @@ NF-IP-10 GOAL-09: Implement target=agy wake: Thinking as agy → global agy CLI 
 **`!goal` objective:**
 
 ```text
-NF-IP-10 GOAL-10: Wire lead_peer_full classifier into message handling: master flag + room armed required; allow authors principal|grok|agy in collab rooms; enqueue WakeJob by target; mark mids processed; serial room lock. Default master off → zero behavior change elsewhere.
+NF-IP-10 GOAL-10: Wire lead_peer_full classifier into message handling per NF-SPEC-10 v1.1: acquire per-room lock BEFORE classify (FR-E7); master+armed gates; authors principal|grok|agy; agent !collab ignored for control (TP-10-C-40); enqueue WakeJob; mark mids; serial wakes. Master default off.
 ```
 
 | | |
 | --- | --- |
-| **Scope** | Operator integration |
+| **Scope** | Operator integration + lock-before-classify |
 | **Out** | Peer bar Done enforcement (GOAL-13) polish |
-| **Verify** | Unit/integration: disarmed → ignore; master off → ignore |
+| **Verify** | TP-10-C-00…C-41; disarmed → ignore; master off → ignore |
 | **Next** | GOAL-11 |
 
 ---
@@ -409,14 +409,14 @@ NF-IP-10 GOAL-13: When lead footer/heuristic claims done, call can_close; if fai
 **`!goal` objective:**
 
 ```text
-NF-IP-10 GOAL-14: Implement principal-only !collab status|pause|resume|budget|on|off|complete|new in rc_commands per NF-SPEC-10 §11. No research wake. Prefer ! help text. Unit tests for parse/dispatch.
+NF-IP-10 GOAL-14: Implement principal-only !collab status|pause|resume|budget|on|off|complete|new|trivial in rc_commands per NF-SPEC-10 §11 v1.1. Enforce author==principal before any mutation (FR-K1/K1a). Clamp budget max 50 (FR-K4). Default hop budget 12. Unit tests TP-10-K-* including K-11.
 ```
 
 | | |
 | --- | --- |
-| **Scope** | Control plane |
+| **Scope** | Control plane + principal gate |
 | **Out** | doctor (GOAL-15) |
-| **Verify** | `!collab status` shape; pause blocks handoff in unit FSM |
+| **Verify** | TP-10-K-01…K-11; agent !collab cannot complete |
 | **Next** | GOAL-15 |
 
 ---
@@ -639,5 +639,6 @@ Operator (Grok) works **only** GOAL-XX until DONE line.
 | Version | Date | Notes |
 | --- | --- | --- |
 | 1.0 | 2026-07-12 | Fine-grained ladder GOAL-00…22 optimized for `!goal` |
+| 1.1 | 2026-07-12 | Folded REVIEW.md security into GOAL-01/03/04/10/14; default budget 12 |
 
-**Normative requirements remain in [NF-SPEC-10](./spec.md).** This plan only sequences work.
+**Normative requirements remain in [NF-SPEC-10](./spec.md) v1.1.** This plan only sequences work.

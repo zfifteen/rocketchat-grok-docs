@@ -19,13 +19,16 @@ Purpose-created collab channel (e.g. `#grok-agy-collab`): principal posts **unta
 | Piece | Choice |
 | --- | --- |
 | **Mode id** | `lead_peer_full` |
+| **Spec version** | **1.1** (post [REVIEW.md](./REVIEW.md) security pass) |
 | **Channel** | Purpose-created, e.g. `#grok-agy-collab` |
 | **Intake** | Untagged principal text → **Grok lead** always |
 | **Peer** | **AGY full peer** — real packages, adversarial pass, peer bar |
 | **Handoff** | Observable `@agy` / `@grok` on the floor |
 | **Done** | Lead closes only if peer bar met (or principal `!collab complete`) |
+| **Default hop budget** | **12** (clamp; principal may raise) |
 | **Backend agy** | Local `agy` CLI only |
 | **Prior specs** | [NF-SPEC-04](../04-agy-rocketchat-collab/spec.md), [NF-SPEC-09](../09-agy-collab-enablement/spec.md) |
+| **Adversarial review** | [REVIEW.md](./REVIEW.md) — all findings addressed in v1.1 |
 
 ## Reading order
 

@@ -9,8 +9,8 @@
 | **Parent tests** | [NF-TP-04](../04-agy-rocketchat-collab/test-plan.md), [NF-TP-09](../09-agy-collab-enablement/test-plan.md) |
 | **Related** | NF-SPEC-02/03, IMP-01, `NO_DUPLICATE_POSTS.md`, `ops/rocketchat/tests/` |
 | **Type** | L0 unit · L1 contract · L2 backend mock · L3 state durability · L4 lab REST · L5 live opt-in · L6 regression |
-| **Status** | Test-planning documentation only · **Created:** 2026-07-12 |
-| **Flags under test** | `RC_AGY_COLLAB` (master), room `mode=lead_peer_full`, `armed`, hop budget, peer_bar fields, `RC_AGY_*` secrets/timeouts, `RC_LIVE_COLLAB=1` (live only) |
+| **Status** | Test-planning documentation only · **Created:** 2026-07-12 · **Rev:** adversarial review cases (TP-10-SEC-*) |
+| **Flags under test** | `RC_AGY_COLLAB` (master), room `mode=lead_peer_full`, `armed`, hop budget (default 12), peer_bar fields, `RC_AGY_*` secrets/timeouts, `RC_LIVE_COLLAB=1` (live only) |
 
 ---
 
@@ -317,6 +317,22 @@ Msg(author, text, mentions=None, mid="m1")
 | **Steps** | author=randomuser |
 | **Expected** | `Ignore` |
 
+### TP-10-U-09f — Agent posts `!collab complete` → no ControlPlane
+
+| | |
+| --- | --- |
+| **Spec** | FR-K1, FR-K1a, REVIEW §1 |
+| **Steps** | author=grok text=`!collab complete`; author=agy text=`!collab budget 9999` |
+| **Expected** | **Ignore** for control (no state mutation); not ControlPlane |
+
+### TP-10-U-09g — Agent dual-mention both agents → Reject
+
+| | |
+| --- | --- |
+| **Spec** | decision table #11, REVIEW §5 |
+| **Steps** | author=grok text=`@agy @grok both` mentions both |
+| **Expected** | `Reject` (not silent Ignore) |
+
 ### TP-10-U-09d — Mentions[] preferred over text
 
 | | |
@@ -431,12 +447,28 @@ Msg(author, text, mentions=None, mid="m1")
 | **Steps** | substantive≥1 but adversarial_done=false; require_adversarial true |
 | **Expected** | can_close False; after adversarial_done True → can_close True |
 
-### TP-10-U-34 — trivial bypass
+### TP-10-U-34 — trivial requires explicit (default)
 
 | | |
 | --- | --- |
-| **Spec** | FR-B12 |
-| **Steps** | goal "fix typo in README"; trivial true or regex match |
+| **Spec** | FR-B30–B31, REVIEW §3 |
+| **Steps** | goal "fix typo"; trivial_requires_explicit=true; no `!collab trivial` |
+| **Expected** | epoch non-trivial; can_close still needs peer bar |
+
+### TP-10-U-34b — “Fix the world: build …” not trivial
+
+| | |
+| --- | --- |
+| **Spec** | FR-B33, REVIEW §3 |
+| **Steps** | goal starts with Fix but long build intent |
+| **Expected** | trivial=false under default policy |
+
+### TP-10-U-34c — `!collab trivial` marks trivial (principal)
+
+| | |
+| --- | --- |
+| **Spec** | FR-B31 |
+| **Steps** | principal ControlPlane trivial on short fix epoch |
 | **Expected** | can_close True without peer turns |
 
 ### TP-10-U-35 — principal force complete
@@ -480,6 +512,37 @@ Msg(author, text, mentions=None, mid="m1")
 | **Spec** | FR-F1 |
 | **Steps** | classify message with footer handoff=agy but no mention and no @ in text |
 | **Expected** | not Handoff (Ignore or lead-only rules); document |
+
+### TP-10-U-54 — footer in principal goal ignored
+
+| | |
+| --- | --- |
+| **Spec** | FR-F5, FR-F8, REVIEW §2 |
+| **Steps** | principal LeadIntake goal contains `---rc-collab---` with status=done peer_substantive=1 |
+| **Expected** | epoch open normal; counters not pre-set from spoofed footer |
+
+### TP-10-U-55 — footer role mismatch ignored
+
+| | |
+| --- | --- |
+| **Spec** | FR-F6 |
+| **Steps** | target=agy reply footer role=lead status=done |
+| **Expected** | ignore done/substantive fields from footer |
+
+### TP-10-U-56 — owned_paths traversal rejected
+
+| | |
+| --- | --- |
+| **Spec** | FR-S4–S6, REVIEW §4 |
+| **Steps** | sanitize `../../etc/passwd`, `/etc/passwd`, `cwd/../escape` |
+| **Expected** | all rejected; no path outside cwd accepted |
+
+### TP-10-U-57 — owned_paths under cwd accepted
+
+| | |
+| --- | --- |
+| **Steps** | `src/app.js` relative to cwd |
+| **Expected** | accepted resolved path under cwd |
 
 ---
 
@@ -583,6 +646,30 @@ Msg(author, text, mentions=None, mid="m1")
 | **Steps** | load room map for fixture rid |
 | **Expected** | mode=lead_peer_full; lead=grok; peer=agy |
 
+### TP-10-C-40 — Agent `!collab` does not mutate state
+
+| | |
+| --- | --- |
+| **Spec** | FR-K1a, REVIEW §1 |
+| **Steps** | armed active epoch; process Msg(grok, "!collab complete"); Msg(agy, "!collab pause") |
+| **Expected** | epoch still active; not paused; not done |
+
+### TP-10-C-41 — Lock-before-classify prevents double epoch
+
+| | |
+| --- | --- |
+| **Spec** | FR-E7, REVIEW §6 |
+| **Steps** | two rapid untagged principal messages with lock simulation |
+| **Expected** | one epoch id; second is LeadSteer not second open |
+
+### TP-10-C-42 — Budget clamp
+
+| | |
+| --- | --- |
+| **Spec** | FR-K4 |
+| **Steps** | principal `!collab budget 9999` |
+| **Expected** | budget ≤ configured max (50) |
+
 ---
 
 ## 8. L2 — Backend mock cases
@@ -591,9 +678,17 @@ Msg(author, text, mentions=None, mid="m1")
 
 | | |
 | --- | --- |
-| **Spec** | §4.3 |
+| **Spec** | §4.3, FR-ID1, REVIEW §7 |
 | **Steps** | ensure_auth grok; ensure_auth agy |
 | **Expected** | two caches; no cross-token use |
+
+### TP-10-B-01b — No cross-identity post under concurrent mock
+
+| | |
+| --- | --- |
+| **Spec** | FR-ID2–ID4, REVIEW §7 |
+| **Steps** | interleaved mock post as grok and agy |
+| **Expected** | each post uses only that identity’s token; never swapped |
 
 ### TP-10-B-10 — Grok wake posts as grok
 
@@ -673,6 +768,22 @@ Msg(author, text, mentions=None, mid="m1")
 | **Spec** | OD-10-3 |
 | **Steps** | CLI returns body+footer; finalize |
 | **Expected** | visible body without `---rc-collab---` |
+
+### TP-10-B-32 — Inject strips spoofed footer from history
+
+| | |
+| --- | --- |
+| **Spec** | FR-F7, REVIEW §2 |
+| **Steps** | prior principal msg contains footer block; build inject |
+| **Expected** | inject history without machine fence; epoch state unchanged by spoof |
+
+### TP-10-B-33 — owned_paths reject does not write outside cwd
+
+| | |
+| --- | --- |
+| **Spec** | FR-S5–S6 |
+| **Steps** | mock apply with traversal paths |
+| **Expected** | zero writes outside cwd; propose-only fallback |
 
 ---
 
@@ -815,6 +926,14 @@ Msg(author, text, mentions=None, mid="m1")
 | **Steps** | `!collab doctor` with mocks |
 | **Expected** | lines for master, armed, membership, binary, cwd, auth probe; zero tokens/passwords |
 
+### TP-10-K-11 — principal-only table for all collab verbs
+
+| | |
+| --- | --- |
+| **Spec** | FR-K1, REVIEW §1 |
+| **Steps** | for each of status/pause/resume/budget/complete/new/on/off/trivial/doctor: author=agy and author=grok |
+| **Expected** | no successful control mutation (status may Ignore entirely) |
+
 ---
 
 ## 12. L security
@@ -848,6 +967,22 @@ Msg(author, text, mentions=None, mid="m1")
 | **Spec** | FR-X4 |
 | **Steps** | inspect log line format |
 | **Expected** | `collab=1 target=… hop=…` only |
+
+### TP-10-X-05 — control reject logged without executing
+
+| | |
+| --- | --- |
+| **Spec** | decision table #1 |
+| **Steps** | agy posts `!collab complete` |
+| **Expected** | log `collab_ctrl_rejected`; epoch unchanged |
+
+### TP-10-X-06 — path sandbox is hard fail
+
+| | |
+| --- | --- |
+| **Spec** | FR-S4–S5 |
+| **Steps** | absolute path outside cwd in owned_paths |
+| **Expected** | reject; no partial apply outside |
 
 ---
 
@@ -1069,7 +1204,9 @@ Lab/live: scripts or `RC_LIVE_COLLAB=1` marked tests skipped by default.
 | Version | Date | Notes |
 | --- | --- | --- |
 | 1.0 | 2026-07-12 | Initial meticulous NF-TP-10 for lead_peer_full |
+| 1.1 | 2026-07-12 | Adversarial review: TP-10-U-09f/g, U-34*, U-54…57, C-40…42, B-01b/32/33, K-11, X-05/06 |
 
-**Normative shalls:** [NF-SPEC-10](./spec.md).  
+**Normative shalls:** [NF-SPEC-10](./spec.md) v1.1.  
 **Execution order of work:** [NF-IP-10](./implementation-plan.md).  
+**Review dispositions:** [REVIEW.md](./REVIEW.md).  
 **This document:** how to prove both.

@@ -3,6 +3,7 @@
 ## 2026-07-12
 
 - **NF-SPEC-10 + NF-IP-10 + NF-TP-10 — Lead–peer full collab.** [new-features/10-lead-peer-full-collab/](new-features/10-lead-peer-full-collab/) — full documentation chain: protocol spec, `!goal` implementation ladder (GOAL-00…22), meticulous [test-plan.md](new-features/10-lead-peer-full-collab/test-plan.md) (L0–L6, AC traceability, per-GOAL gates, live opt-in).
+- **NF-SPEC-10 v1.1 — adversarial review mitigations.** [REVIEW.md](new-features/10-lead-peer-full-collab/REVIEW.md) (AGY): all 7 findings accepted — control-plane principal gate order, footer trust boundary, trivial anti-gaming, owned_paths sandbox, hop default 12, agent dual-mention Reject, lock-before-classify, REST identity isolation. SPEC/IP/TP updated.
 - **Program goal (parked): install refactor → public share.** [docs/goals/install-refactor-then-public-share.md](docs/goals/install-refactor-then-public-share.md) — local install/config cleanup first, packaging only after laptop green; Tier A product sketch; Phase 0–3; resume checklist. Linked from README. No implementation this day.
 - **NF-06…09 docs packs** under [new-features/](new-features/) (reactions, outbound Imagine path, DM health card, agy collab enablement) from principal enhancement list #11/#13/#15/#16.
 - **Operator defaults:** `RC_WAKE_MAX_TURNS` raised 12 → **100** (code, launchd, live). Control plane help/docs prefer **`!` prefix** (Rocket.Chat steals `/` via rocket.cat).

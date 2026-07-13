@@ -3,9 +3,9 @@
 | Field | Value |
 | --- | --- |
 | **Spec ID** | **NF-SPEC-10** |
-| **Version** | 1.0 |
+| **Version** | 1.1 |
 | **Status** | Specification — documentation only (runtime not required by this package) |
-| **Date** | 2026-07-12 |
+| **Date** | 2026-07-12 · **Rev 1.1:** adversarial review mitigations ([REVIEW.md](./REVIEW.md)) |
 | **Mode id** | `lead_peer_full` |
 | **Parent / prior art** | [NF-SPEC-04](../04-agy-rocketchat-collab/spec.md) (dual identity, tag-to-talk, CLI-only agy); [NF-SPEC-09](../09-agy-collab-enablement/spec.md) (arming / enablement); [profiles](../04-agy-rocketchat-collab/profiles/) |
 | **Test plan** | [test-plan.md](./test-plan.md) (**NF-TP-10**) |
@@ -184,19 +184,24 @@ Posts and `chat.update` for a wake **shall** use the target identity’s auth. D
   "peer_bar": {
     "min_substantive_peer_turns": 1,
     "require_adversarial_before_done": true,
+    "trivial_max_goal_chars": 80,
+    "trivial_requires_explicit": true,
     "trivial_bypass_patterns": ["^(?i)(fix|typo|nit)\\b"]
   },
   "phases": ["frame_split", "peer_deep", "integrate", "adversarial", "close"],
-  "hop_budget": 30,
+  "hop_budget": 12,
   "cwd": "<absolute path>",
   "write_scope": {
     "lead_default": "apply",
     "peer_default": "apply_owned_paths",
-    "owned_paths_from_handoff": true
+    "owned_paths_from_handoff": true,
+    "owned_paths_must_be_under_cwd": true
   },
   "armed": true
 }
 ```
+
+Default **`hop_budget` is 12** (not 30) for cost control; principal may raise via `!collab budget` for deep work.
 
 ### 5.2 Profile requirements
 
@@ -209,6 +214,7 @@ Posts and `chat.update` for a wake **shall** use the target identity’s auth. D
 | **FR-P5** | Master env `RC_AGY_COLLAB` (or NF-SPEC-09 master flag) **shall** be enabled for any collab routing. |
 | **FR-P6** | Room **shall** be explicitly armed (`armed=true` or `!collab on`) before dual-peer or lead-intake wakes. |
 | **FR-P7** | When master off or room disarmed, operator **shall** retain non-collab behavior for that room (no bot↔bot; no AGY intake). |
+| **FR-P8** | Profile default `hop_budget` **shall** be ≤ **12** unless principal explicitly configures higher (cost default). |
 
 ---
 
@@ -228,12 +234,13 @@ Collab state **shall** live in operator `state.json` (or successor single state 
   "opened_at": "<iso8601>",
   "opened_by_mid": "<message id>",
   "hop": 0,
-  "budget": 30,
+  "budget": 12,
   "phase": "frame_split",
   "phases_done": [],
   "peer_substantive_turns": 0,
   "adversarial_done": false,
   "trivial": false,
+  "trivial_reason": null,
   "goal_amendments": [],
   "contribution": { "grok": [], "agy": [] },
   "last_handoff": {
@@ -263,6 +270,7 @@ Collab state **shall** live in operator `state.json` (or successor single state 
 | **FR-E4** | **Resume:** `!collab resume` → `active` if budget remains. |
 | **FR-E5** | **Done:** only if peer bar satisfied (§8) or principal `!collab complete` override. |
 | **FR-E6** | **New task after done:** next qualifying principal message opens a **new** epoch id. |
+| **FR-E7** | **Lock-before-classify:** for each inbound collab-room message, the operator **shall** acquire the per-room wake/serialization lock (or equivalent room mutex) **before** reading epoch status and deciding LeadIntake vs LeadSteer vs open-epoch, so rapid successive messages cannot create two concurrent epochs (FR-E2). |
 
 ---
 
@@ -290,22 +298,26 @@ Ignore
 
 ### 7.3 Decision table (normative)
 
+**Order is security-sensitive.** Author checks **shall** run before control-plane execution. Agents **shall never** execute collab control commands.
+
 | # | Condition | Action |
 | --- | --- | --- |
-| 1 | Text is control plane (`!collab…`, yes/no confirm) | ControlPlane |
-| 2 | author ∉ allowlist | Ignore |
-| 3 | room paused and not principal control | Ignore |
+| 0 | author ∉ allowlist | **Ignore** |
+| 1 | Text matches control plane shape (`!collab…` / yes\|no confirm) **and** author ≠ principal | **Ignore** (log `collab_ctrl_rejected author=…`) — **no** state mutation |
+| 2 | Text matches control plane **and** author = principal | **ControlPlane** (then FR-K*) |
+| 3 | room paused (non-control traffic) | Ignore handoffs/intake; principal control still via #2 |
 | 4 | author=principal, no agent mention, no active epoch | **LeadIntake** |
 | 5 | author=principal, no agent mention, active epoch | **LeadSteer** |
 | 6 | author=principal, mentions only lead (`grok`) | LeadSteer or LeadIntake if no epoch |
 | 7 | author=principal, mentions only peer (`agy`) | DirectPeer **or** Reject — **OD-10-1** (default recommend: allow DirectPeer) |
 | 8 | author=principal, mentions both agents | Reject with help (mention one target) |
-| 9 | author=lead, mentions peer only (not self-only) | **Handoff→peer**, hop++ |
-| 10 | author=peer, mentions lead | **Handoff→lead**, hop++ |
-| 11 | author ∈ {lead, peer}, no agent mention | Ignore |
-| 12 | self-mention only | Ignore (self-wake filter) |
-| 13 | Handoff would exceed hop budget | Stop card; pause; no enqueue |
-| 14 | Parallel multi-target agent wake | Forbidden; Reject or deterministic single target only |
+| 9 | author=lead, mentions peer only (not lead, not both) | **Handoff→peer**, hop++ |
+| 10 | author=peer, mentions lead only (not peer, not both) | **Handoff→lead**, hop++ |
+| 11 | author ∈ {lead, peer}, mentions **both** agents | **Reject** (ambiguous dual handoff) — **shall not** Ignore silently |
+| 12 | author ∈ {lead, peer}, no agent mention | Ignore |
+| 13 | self-mention only | Ignore (self-wake filter) |
+| 14 | Handoff would exceed hop budget | Stop card; pause; no enqueue |
+| 15 | Parallel multi-target agent wake | Forbidden |
 
 ### 7.4 Lead intake (critical)
 
@@ -363,19 +375,30 @@ frame_split → peer_deep → integrate → adversarial → close
 | --- | --- |
 | **FR-B10** | Non-trivial epoch **shall not** transition to `done` unless `peer_substantive_turns >= min_substantive_peer_turns`. |
 | **FR-B11** | If `require_adversarial_before_done` is true, non-trivial epoch **shall not** done unless `adversarial_done`. |
-| **FR-B12** | Trivial epochs (profile regex / explicit trivial flag) **may** bypass peer bar. |
+| **FR-B12** | Trivial peer-bar bypass **shall not** rely on goal-prefix regex alone. See §8.5a. |
 | **FR-B13** | If lead claims Done but bar fails, operator **shall** refuse close, keep epoch `active`, and emit a short protocol notice (prefer updating/finalizing without a second long answer bubble; one short protocol line is allowed). |
 | **FR-B14** | Principal `!collab complete` **may** override peer bar (logged). |
 
 ### 8.5 Substantive peer turn
 
-A peer turn **shall** count as substantive only if it is not a pure rubber-stamp. Implementation **shall** use at least one of:
+A peer turn **shall** count as substantive only if **all** of the following hold:
 
-1. Footer flag `PEER_SUBSTANTIVE: 1` **and** body not matching LGTM-only patterns; or  
-2. Heuristic: body length ≥ threshold **and** not matching `^(?i)\s*(lgtm|looks good|ship it)\b` only; or  
-3. Presence of owned_paths / decision-record structure.
+1. The footer (if any) was accepted under **FR-F4…F6** (wake-finalize of **peer** identity only); and  
+2. Body is not pure rubber-stamp (LGTM-only patterns); and  
+3. At least one of: body length ≥ threshold; structured decision content; non-empty sanitized `owned_paths`.
+
+Footer flag `peer_substantive: 1` alone **shall not** mark substantive without (2)+(3).
 
 **FR-B20:** Pure “LGTM” / “looks good” peer replies **shall not** increment `peer_substantive_turns`.
+
+### 8.5a Trivial bypass (anti-gaming)
+
+| ID | Requirement |
+| --- | --- |
+| **FR-B30** | Default profile **shall** set `trivial_requires_explicit=true`. |
+| **FR-B31** | When `trivial_requires_explicit` is true, epoch is trivial **only** if principal issues `!collab trivial` (while epoch active or as part of intake policy) — **not** because the goal text matches a regex. |
+| **FR-B32** | If implementers enable regex assist (`trivial_bypass_patterns`), it **shall** also require `len(goal) <= trivial_max_goal_chars` (default **80**) and **shall not** treat a match as trivial when the remainder of the goal after the first token is longer than `trivial_max_goal_chars` or contains build/implement intent keywords (configurable denylist, e.g. `build`, `implement`, `architecture`, `microservice`). |
+| **FR-B33** | “Fix the world: build …” style goals **shall** remain non-trivial under default policy. |
 
 ### 8.6 Default collaboration graph (inject guidance)
 
@@ -408,13 +431,13 @@ WakeJob {
 
 | Step | Requirement |
 | --- | --- |
-| Lock | Acquire per-room wake lock; serial v1 |
-| Placeholder | Post `Thinking...` **as target identity** |
-| Inject | Build role + epoch + phase + peer bar + last relevant peer/principal text |
+| Lock | Acquire per-room wake lock; serial v1 (**also** before classify — FR-E7) |
+| Placeholder | Post `Thinking...` **as target identity** only (FR-ID1) |
+| Inject | Build role + epoch + phase + peer bar + last relevant peer/principal text; **strip any `---rc-collab---` blocks from untrusted principal/peer history before inject** (FR-F7) |
 | Backend | Spawn CLI with timeout / max turns |
 | Reply | Read reply file only (no second answer post) |
-| Footer | Parse machine footer (§10.3); strip before user-visible body if configured |
-| Finalize | `chat.update` placeholder as target identity |
+| Footer | Parse machine footer **only from this wake’s reply file** as the **current target** (FR-F4); strip before user-visible body if configured |
+| Finalize | `chat.update` placeholder as **same** target identity |
 | State | Update epoch, sessions, contribution, substantive flags |
 | Unlock | Release room lock |
 
@@ -505,20 +528,37 @@ peer_substantive: 0|1
 | ID | Requirement |
 | --- | --- |
 | **FR-F1** | Footer alone **shall not** enqueue a wake; visible `@mention` still required for handoff. |
-| **FR-F2** | `status=done` from lead triggers peer-bar check before epoch close. |
+| **FR-F2** | `status=done` accepted **only** from a **lead** wake finalize footer (FR-F4) triggers peer-bar check before epoch close. |
 | **FR-F3** | Invalid/missing footer **shall not** crash the wake; operator uses heuristics. |
+| **FR-F4** | Operator **shall** parse footers **only** from the **reply file of the wake just completed**, attributed to `WakeJob.target` (`grok` or `agy`). |
+| **FR-F5** | Footers appearing in **principal messages**, inbound history, or quoted text **shall be stripped/ignored** for state mutation (not trusted). |
+| **FR-F6** | Role in footer **shall** match wake target (`lead` iff target=grok; `peer` iff target=agy); mismatch → ignore footer fields for bar/done/substantive. |
+| **FR-F7** | When building inject, operator **shall** strip `---rc-collab---` blocks from untrusted prior messages so agents cannot be fed spoofed machine state as “history.” |
+| **FR-F8** | `peer_substantive` / `status=done` in a spoofed principal goal **shall not** affect epoch counters. |
 
 ### 10.5 Handoff quality (should)
 
 Lead handoffs that are only “thoughts?” / “LGTM?” **should** be discouraged in inject; optional operator warn if ask_type missing and body matches weak patterns.
 
-### 10.6 Write scope
+### 10.6 Write scope and path sandbox
 
 | ID | Requirement |
 | --- | --- |
 | **FR-S1** | Lead default write scope **shall** be configurable (`apply` recommended for pinned scratch cwd). |
 | **FR-S2** | Peer **shall not** be permanently demoted to propose-only if full-peer is claimed; v1 **shall** allow `apply_owned_paths` when handoff/footer specifies paths. |
 | **FR-S3** | Integration conflicts: lead merges; principal breaks ties. |
+| **FR-S4** | Every path in `owned_paths` **shall** be resolved with `Path.resolve()` (or equivalent) and **shall** be a descendant of the room `cwd` resolve root. |
+| **FR-S5** | Paths containing `..` segments that escape `cwd`, absolute paths outside `cwd`, symlinks escaping `cwd` (when detectable), or empty/globs that expand outside `cwd` **shall** be **rejected**; reject **shall not** grant apply outside sandbox. |
+| **FR-S6** | On reject, operator **should** log `owned_path_rejected` and treat peer write scope as propose-only for that turn. |
+
+### 10.7 Dual REST identity isolation
+
+| ID | Requirement |
+| --- | --- |
+| **FR-ID1** | Auth token cache **shall** be keyed by identity (`grok` \| `agy`); a request for identity A **shall never** use B’s token. |
+| **FR-ID2** | `postMessage` / `chat.update` for a wake **shall** use only `WakeJob.target`’s client. |
+| **FR-ID3** | Concurrent wakes (if ever allowed later) **shall not** share mutable “current token” globals; v1 serial lock makes this easier but **shall not** be the only isolation. |
+| **FR-ID4** | Unit/integration tests **shall** assert no cross-identity post under concurrent mock load (TP-10-B-01 / B-01b). |
 
 ---
 
@@ -532,16 +572,19 @@ Rocket.Chat client intercepts `/…`. Commands **shall** use **`!` prefix** (and
 | `!collab pause` | pause epoch / block handoffs |
 | `!collab resume` | resume if budget allows |
 | `!collab complete` | principal force-done (override peer bar; log) |
-| `!collab budget <n>` | set remaining hop budget |
+| `!collab budget <n>` | set remaining hop budget (cap max, e.g. 50) |
+| `!collab trivial` | mark active epoch trivial **only** if FR-B30…B33 policy allows; principal-only |
 | `!collab new` | close/abandon active epoch; next intake opens fresh |
 | `!collab doctor` | check: master flag, room armed, both users in room, agy CLI path, cwd exists, dual auth probe |
 | `!collab on` / `off` | arm/disarm room (NF-SPEC-09) |
 
 | ID | Requirement |
 | --- | --- |
-| **FR-K1** | Collab control commands **shall** be principal-only. |
+| **FR-K1** | Collab control commands **shall** be principal-only (**enforced before dispatch**, decision table #0–#2). |
+| **FR-K1a** | If `grok` or `agy` posts text matching `!collab…`, operator **shall** Ignore for control purposes (no pause/complete/budget/arm mutation). Optional: short protocol notice once per epoch that agents cannot drive control plane. |
 | **FR-K2** | Commands **shall not** spawn a research Grok wake. |
 | **FR-K3** | Unknown `!…` **shall not** start a research wake (NF-SPEC-03). |
+| **FR-K4** | `!collab budget <n>` **shall** clamp `n` to a configured maximum (default max **50**) to limit cost bombs. |
 
 ---
 
@@ -617,12 +660,17 @@ Rocket.Chat client intercepts `/…`. Commands **shall** use **`!` prefix** (and
 | Risk | Mitigation |
 | --- | --- |
 | Lead solos, peer bar gamed | Heuristics + adversarial flag + inject; tune thresholds |
-| Infinite polite @ ping-pong | Hop budget; handoff quality norms; pause |
-| Merge conflicts dual apply | owned_paths; lead integrates; serial wakes |
+| Infinite polite @ ping-pong | Default hop budget 12; clamp; handoff quality; pause |
+| Merge conflicts dual apply | owned_paths under cwd only (FR-S4…S6); lead integrates; serial wakes |
 | Casual chat starts builds | Purpose-created channel only; optional `!do` seatbelt (OD-10-2) |
 | agy CLI contention | Global lock; serial room |
 | Empty / max-turns wakes | Parity with Grok FINAL_ERR; adequate max turns/timeouts |
 | RC `/` slash steal | `!collab` only in docs and help |
+| Agent spoofs `!collab` | FR-K1 / K1a; decision table #1 |
+| Footer spoof in goal/history | FR-F4…F8 |
+| Trivial regex gaming | FR-B30…B33; `!collab trivial` |
+| Race double epoch | FR-E7 lock-before-classify |
+| REST identity mix-up | FR-ID1…ID4 |
 
 ---
 
@@ -645,7 +693,8 @@ Rocket.Chat client intercepts `/…`. Commands **shall** use **`!` prefix** (and
 | Version | Date | Notes |
 | --- | --- | --- |
 | 1.0 | 2026-07-12 | Initial NF-SPEC-10 from lead–peer full design discussion |
+| 1.1 | 2026-07-12 | Adversarial review ([REVIEW.md](./REVIEW.md)): control-plane principal gate order; footer trust boundary; trivial anti-gaming; owned_paths sandbox; hop default 12; agent dual-mention Reject; lock-before-classify; REST identity isolation |
 
 **Normative language:** *shall* / *shall not* = requirements; *should* = strong recommendation; *may* = optional.
 
-When implementing, update NF-TP-10 / NF-IP-10 or track acceptance via §13 until those documents exist. Keep [NF-SPEC-04](../04-agy-rocketchat-collab/spec.md) for baseline dual-peer primitives; treat **this document as the v1 protocol for purpose-created lead–peer rooms**.
+When implementing, follow [NF-TP-10](./test-plan.md) and [NF-IP-10](./implementation-plan.md). Keep [NF-SPEC-04](../04-agy-rocketchat-collab/spec.md) for baseline dual-peer primitives; treat **this document as the v1 protocol for purpose-created lead–peer rooms**.
