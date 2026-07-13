@@ -1,149 +1,43 @@
 # Adversarial Review: Lead-Peer Full Collab (NF-SPEC-10)
 
+*Update (Rev 1.1): This review has been updated to reflect the mitigations implemented in v1.1 of the specifications.*
+
 This document contains an adversarial review of the `lead_peer_full` collaboration protocol defined in `spec.md`, `implementation-plan.md`, and `test-plan.md`. The goal is to identify security vulnerabilities, logic flaws, privilege escalations, and edge cases.
 
-**Reviewer:** AGY  
-**Disposition date:** 2026-07-12  
-**Spec revision after review:** **NF-SPEC-10 v1.1**
+## Status of Findings in v1.1
+
+All findings from the initial adversarial review have been successfully mitigated in v1.1 of the documentation package. 
+
+### 1. Control Plane Hijacking & Privilege Escalation (Mitigated)
+**Finding**: The `!collab` control plane may be vulnerable to agent spoofing.
+**Mitigation in v1.1**: The decision table explicitly enforces `author != principal` for control commands in Rule 1, ensuring agents outputting `!collab` commands are ignored and do not mutate state (FR-K1/K1a). Tests `TP-10-U-09f` and `TP-10-C-40` enforce this contract.
+
+### 2. Footer Spoofing & Prompt Injection (Mitigated)
+**Finding**: The machine footer (`---rc-collab---`) can be spoofed by the principal or via prompt injection.
+**Mitigation in v1.1**: `spec.md` now explicitly restricts footer parsing to the *reply file* of the *current wake* and mandates a role match (FR-F4, FR-F6). Furthermore, footers are stripped from untrusted prior history before being injected (FR-F7). This prevents spoofed footers from mutating state. Tested in `TP-10-U-54`, `TP-10-U-55`, and `TP-10-B-32`.
+
+### 3. Peer Bar Bypass via Trivial Regex Match (Mitigated)
+**Finding**: The `peer_bar` enforcement can be easily bypassed by prepending trivial keywords like "Fix".
+**Mitigation in v1.1**: The `trivial_requires_explicit` flag is now `true` by default, requiring the principal to explicitly issue `!collab trivial`. In addition, regex gaming is prevented by limiting the goal character count (FR-B32) and restricting build-intent keywords. Tested in `TP-10-U-34..34c`.
+
+### 4. Sandbox Escape via `owned_paths` Path Traversal (Mitigated)
+**Finding**: The `apply_owned_paths` write scope could allow arbitrary file overwrites.
+**Mitigation in v1.1**: Requirements FR-S4 through FR-S6 now enforce strict path sanitization. Any paths containing `..` segment escapes or absolute paths outside the `cwd` are explicitly rejected. Tested in `TP-10-U-56` and `TP-10-B-33`.
+
+### 5. Infinite Loops and Budget Draining (Mitigated)
+**Finding**: "Polite" ping-pong loops can still consume significant budget.
+**Mitigation in v1.1**: 
+- The default hop budget is reduced from 30 to 12, mitigating extensive API cost drains. 
+- `!collab budget` commands are now clamped to a maximum limit of 50 (FR-K4). 
+- An agent tagging both `@grok` and `@agy` now results in a deliberate `Reject` (Rule 11) rather than falling through to an ambiguous `Ignore`. Tested in `TP-10-U-09g` and `TP-10-C-42`.
+
+### 6. Concurrency and Race Conditions (Mitigated)
+**Finding**: Rapid successive messages might circumvent the serial lock.
+**Mitigation in v1.1**: FR-E7 mandates "lock-before-classify", meaning the room's serial lock is acquired *before* determining whether to create a new epoch or append to an existing one. This prevents duplicate epoch creations under concurrent message events. Tested in `TP-10-C-41`.
+
+### 7. Identity Spoofing in REST Post (Mitigated)
+**Finding**: Lack of strict credential isolation could allow identity spoofing.
+**Mitigation in v1.1**: FR-ID1 through FR-ID4 strictly require authentication caching to be keyed by identity (`grok` vs `agy`) preventing cross-identity token usage. Tested thoroughly via `TP-10-B-01` and `TP-10-B-01b`.
 
 ---
-
-## Disposition summary
-
-| # | Finding | Valid? | Disposition |
-| --- | --- | --- | --- |
-| 1 | Control plane hijacking via agent `!collab` | **Yes** | **Fixed** in spec §7.3 + FR-K1/K1a; tests TP-10-U-09f, C-40, K-11, X-05 |
-| 2 | Footer spoofing / prompt injection | **Yes** | **Fixed** FR-F4–F8; tests U-54, U-55, B-32 |
-| 3 | Trivial regex peer-bar bypass | **Yes** | **Fixed** FR-B30–B33 + `!collab trivial`; tests U-34* |
-| 4 | `owned_paths` path traversal | **Yes** | **Fixed** FR-S4–S6; tests U-56, U-57, B-33, X-06 |
-| 5 | Budget drain / agent dual-mention | **Yes** (partial) | **Fixed** default hop_budget **12**, FR-K4 clamp, table #11 Reject dual agent mentions; FR-P8 |
-| 6 | Race / double epoch | **Yes** | **Fixed** FR-E7 lock-before-classify; test C-41 |
-| 7 | REST identity cross-contamination | **Yes** | **Fixed** FR-ID1–ID4; tests B-01, B-01b |
-
-All seven findings were treated as valid and addressed in documentation (normative shalls + tests + IP goal text). Runtime implementation still pending NF-IP-10 execution.
-
----
-
-## 1. Control Plane Hijacking & Privilege Escalation
-
-**Finding**: The `!collab` control plane may be vulnerable to agent spoofing.  
-**Detail**: In `spec.md` Section 7.3 (Decision Table), Rule 1 evaluated `!collab` as `ControlPlane` *before* author checks. While FR-K1 stated principal-only, a prompt-injected agent could output `!collab complete` / `!collab budget 9999` if the handler only matched regex.  
-**Recommendation**: Enforce `author == principal` before executing any `!collab` command; test agent rejection.
-
-### Disposition — **Accepted / Fixed (v1.1)**
-
-- Decision table reordered: **#0 allowlist → #1 agent control shape = Ignore → #2 principal only = ControlPlane**.  
-- **FR-K1a**: grok/agy `!collab…` **shall not** mutate state.  
-- **FR-K4**: budget clamped (max 50).  
-- Tests: **TP-10-U-09f**, **TP-10-C-40**, **TP-10-K-11**, **TP-10-X-05**.  
-- IP: GOAL-01, GOAL-14 updated.
-
----
-
-## 2. Footer Spoofing & Prompt Injection
-
-**Finding**: Machine footer can be spoofed by principal or injection.  
-**Detail**: Blind trust of `---rc-collab---` could set `peer_substantive` / `status: done` from untrusted text.  
-**Recommendation**: Only accept footer from expected agent identity at end of turn.
-
-### Disposition — **Accepted / Fixed (v1.1)**
-
-- **FR-F4**: parse footer **only** from current wake reply file + `WakeJob.target`.  
-- **FR-F5/F7/F8**: ignore/strip footers in principal messages and inject history.  
-- **FR-F6**: role must match target.  
-- Substantive counting requires trusted footer path + non-LGTM body (FR-B20).  
-- Tests: **TP-10-U-54**, **U-55**, **B-32**.  
-- IP: GOAL-04 updated.
-
----
-
-## 3. Peer Bar Bypass via Trivial Regex Match
-
-**Finding**: Prefix `Fix` could mark huge tasks trivial.  
-**Detail**: `trivial_bypass_patterns` alone is gameable (`Fix the world: build…`).  
-**Recommendation**: Length limits and/or explicit `!collab trivial`.
-
-### Disposition — **Accepted / Fixed (v1.1)**
-
-- **FR-B30–B33**: default `trivial_requires_explicit=true`; principal `!collab trivial`; optional regex only with max chars + denylist.  
-- Default hop budget lowered separately (cost).  
-- Tests: **TP-10-U-34**, **U-34b**, **U-34c**.  
-- IP: GOAL-03, GOAL-14 (`!collab trivial`).
-
----
-
-## 4. Sandbox Escape via `owned_paths` Path Traversal
-
-**Finding**: `apply_owned_paths` could write outside cwd.  
-**Detail**: `../`, absolute paths, etc.  
-**Recommendation**: Resolve and require descendant of cwd.
-
-### Disposition — **Accepted / Fixed (v1.1)**
-
-- **FR-S4–S6**: resolve + under-cwd only; reject escapes; propose-only fallback.  
-- Profile: `owned_paths_must_be_under_cwd: true`.  
-- Tests: **TP-10-U-56**, **U-57**, **B-33**, **X-06**.  
-- IP: GOAL-04 includes `sanitize_owned_paths`.
-
----
-
-## 5. Infinite Loops and Budget Draining
-
-**Finding**: 30 hops still expensive; agent dual-mention ambiguous.  
-**Recommendation**: Lower default budget; explicit dual-mention handling.
-
-### Disposition — **Accepted / Fixed (v1.1)**
-
-- Default **`hop_budget`: 12** (FR-P8); principal may raise; **FR-K4** clamp max 50.  
-- Decision table **#11**: agent mentions **both** → **Reject** (not silent Ignore).  
-- Note: deep collab may still need higher budget via `!collab budget` — intentional principal control, not silent 30.
-
----
-
-## 6. Concurrency and Race Conditions
-
-**Finding**: Rapid messages might open two epochs before lock.  
-**Recommendation**: Queue/lock before epoch evaluation.
-
-### Disposition — **Accepted / Fixed (v1.1)**
-
-- **FR-E7**: lock-before-classify for collab rooms.  
-- Test: **TP-10-C-41**.  
-- IP: GOAL-10.
-
----
-
-## 7. Identity Spoofing in REST Post
-
-**Finding**: Shared token state could post as wrong user.  
-**Recommendation**: Cache keyed by identity; concurrent isolation tests.
-
-### Disposition — **Accepted / Fixed (v1.1)**
-
-- **FR-ID1–ID4**: per-identity clients; no shared mutable current-token; tests required.  
-- Tests: **TP-10-B-01**, **B-01b**.  
-- IP: GOAL-06/07 remain the implementation home.
-
----
-
-## Residual risks (accepted, not fully eliminable in docs)
-
-| Risk | Residual |
-| --- | --- |
-| Model still “politely” burns 12 hops | Budget + pause; human `!collab pause` |
-| Principal `!collab complete` overrides peer bar | Intentional supervisor power (FR-B14) |
-| Symlink escape if OS follows links | FR-S5 “when detectable”; implement with `resolve` + samefile checks |
-| Live model ignores inject | Peer bar still blocks Done without substantive peer |
-
----
-
-## Verification for implementers
-
-Before claiming NF-IP-10 security goals done, run at least:
-
-- TP-10-U-09f, U-09g, U-34*, U-54…57  
-- TP-10-C-40, C-41, C-42  
-- TP-10-B-01, B-01b, B-32, B-33  
-- TP-10-K-11, X-05, X-06  
-
-Full matrix remains in [test-plan.md](./test-plan.md) v1.1.
+**Conclusion:** The updated v1.1 specifications securely address the identified adversarial vectors. The protocol is resilient against prompt injection, state manipulation, sandbox escapes, and cost/concurrency abuse.

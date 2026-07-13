@@ -72,7 +72,7 @@ Same room → same Grok session via `--resume` (session continuity per room).
 | --- | --- | --- |
 | Primary wake | WebSocket realtime | Low latency; room membership re-scan ~60s |
 | Backup wake | HTTP poll (`rc_dm_poll.py`) | launchd exists; **off by default** (lag) |
-| Replies | `Thinking...` then `chat.update` | **One bubble** — never a second answer post |
+| Replies | 👀 on principal + activity bubble (thought stream) then `chat.update` | **One answer bubble** — never a second answer post |
 | Images | `rc_post_media.py` + ledger | Never double `rooms.mediaConfirm` |
 
 Standing rule: `ops/rocketchat/NO_DUPLICATE_POSTS.md`.

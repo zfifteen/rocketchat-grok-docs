@@ -11,14 +11,15 @@
 2. **Rocket.Chat** delivers an event over the operator WebSocket  
    (`rc_operator_agent.py`).
 3. Operator **filters** (principal-only, not self, not already handled).
-4. Operator posts **`Thinking...`** as `grok` in that room  
-   (single message id reserved for the answer).
-5. Operator builds a wake package:
+4. Operator reacts **👀** on the **principal** message (kept after done).  
+5. Operator posts one **activity** bubble as `grok` (initial `…`; live **thought**  
+   stream from headless `streaming-json` when `RC_WAKE_STREAM` is on — default).  
+6. Operator builds a wake package:
    - inject from `reply_prompt.txt` + room metadata  
    - resolve **cwd** (DM → agency; channel → IdeaProjects slug / override)  
    - spawn **Grok CLI** with `--cwd`, often `--resume` for same room  
    - Grok writes the **final answer to a reply file** (not direct RC API for text).
-6. Operator **`chat.update`s** the Thinking… message with the final answer only.  
+7. Operator **`chat.update`s** the activity bubble with the final answer only.  
    **No second bubble.**
 7. Optional: Grok may shell out to `rc_post_media.py` for images/files  
    (ledgered; one confirm only).
@@ -133,9 +134,11 @@ prior silence root cause.
 ```
 principal msg
     → WS event
-    → postMessage "Thinking..."
-    → write wake prompt / spawn grok --cwd …
+    → chat.react 👀 on principal mid (kept)
+    → postMessage activity bubble ("…")
+    → write wake prompt / spawn grok --cwd … (streaming-json)
+    → thought chunks → throttled chat.update (same bubble)
     → grok finishes → reply file
-    → chat.update(thinking_msg_id, final_text)
+    → chat.update(activity_msg_id, final_text)
     → [optional] rc_post_media.py
 ```

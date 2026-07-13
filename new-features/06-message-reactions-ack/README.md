@@ -7,7 +7,7 @@
 | **Enhancement list ID** | **#11** (next-wave RC enhancements, principal DM 2026-07-12) |
 | **Spec** | [NF-SPEC-06](./spec.md) |
 | **Test plan** | [NF-TP-06](./test-plan.md) |
-| **Status** | Implementation landed 2026-07-13 (env + react helper + drain hooks); live smoke + operator restart pending |
+| **Status** | **Done** — live-validated by principal (DM test 2026-07-13): 👀 ack + activity/thought bubble + single-bubble finalize |
 | **One-line** | Operator adds RC emoji reactions on Thinking… start / final (👀 / ✅ / ⚠️) without a second text bubble |
 
 ## Why
