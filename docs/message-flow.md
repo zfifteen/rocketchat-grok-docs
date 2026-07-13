@@ -1,6 +1,6 @@
 # Message flow
 
-**Last reviewed:** 2026-07-10
+**Last reviewed:** 2026-07-12
 
 ---
 
@@ -45,6 +45,33 @@ newly created channels (after invite) get subscriptions and short unread catch-u
 5. Reply remains **text** in the Thinking… → update bubble.
 
 Env: `RC_WHISPER_BIN`, `RC_WHISPER_MODEL`, `RC_WHISPER_LANGUAGE`, `RC_STT_TIMEOUT_S`.
+
+---
+
+## F. Inbound attachments (images & files)
+
+When the principal attaches a **picture or document** (DM or watched channel):
+
+1. Operator **rehydrates** the message via `chat.getMessage` (retries briefly if
+   `files[]` is not yet linked — common on mobile upload race / sparse WS).
+2. Classifies candidates: audio | image | document | thumb_skip | binary_skip.
+   RC thumbs (`thumb-*` / `typeGroup=thumb`) are **not** injected as primary images.
+3. Downloads with operator REST auth (`X-Auth-Token`, `X-User-Id`) to  
+   `~/logs/rocketchat-dm-wake/attachments/` (same-host only; size cap).
+4. Wake user text includes structured blocks, e.g.  
+   `[Image attachment(s) — open each path with the read_file tool…]`  
+   and/or `[File attachment(s) …]`.
+5. `reply_prompt.txt` **requires** Grok to `read_file` those local paths before
+   claiming it cannot view attachments. Grok must **not** use bot tokens or
+   open `rocketchat.env` to fetch RC uploads.
+6. Reply remains the normal Thinking… → reply file → `chat.update` path.
+   Outbound media still uses only `rc_post_media.py` (not this inbound path).
+
+Env (defaults): `RC_ATTACH_ENABLED=1`, `RC_ATTACH_IMAGE=1`, `RC_ATTACH_DOCS=1`,
+`RC_ATTACH_MAX_BYTES=20971520`, `RC_ATTACH_MAX_FILES=5`,
+`RC_ATTACH_REHYDRATE_ATTEMPTS=3`, `RC_ATTACH_REHYDRATE_DELAY_S=0.35`.
+
+Spec / plan: [`new-features/05-reading-attachments/`](../new-features/05-reading-attachments/).
 
 ---
 
