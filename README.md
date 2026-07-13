@@ -1,5 +1,7 @@
 # Rocket.Chat ↔ Grok — documentation map
 
+![Rocket.Chat ↔ Grok — documentation map](docs/assets/hero-banner.jpg)
+
 **What this is:** a read-only documentation project that explains the working
 Rocket.Chat + Grok integration on this Mac: how messages flow, which processes
 run, and **where every piece lives on disk**.

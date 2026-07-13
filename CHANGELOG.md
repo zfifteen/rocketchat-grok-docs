@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-13
+
+- **README hero banner:** geometric brand mark (candidate 4) at `docs/assets/hero-banner.jpg`; candidates retained under `docs/assets/banner-candidates/`.
+
 ## 2026-07-12
 
 - **NF-SPEC-10 + NF-IP-10 + NF-TP-10 — Lead–peer full collab.** [new-features/10-lead-peer-full-collab/](new-features/10-lead-peer-full-collab/) — full documentation chain: protocol spec, `!goal` implementation ladder (GOAL-00…22), meticulous [test-plan.md](new-features/10-lead-peer-full-collab/test-plan.md) (L0–L6, AC traceability, per-GOAL gates, live opt-in).
