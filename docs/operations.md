@@ -11,6 +11,9 @@ This page is a durable checklist aligned with that runbook.
 **Suggested config fixes (requirements + test plans):**  
 [docs/improvements/INDEX.md](improvements/INDEX.md)
 
+**Full-stack review findings (2026-07-14, not yet fixed):**  
+[docs/reviews/2026-07-14-rc-integration-heavy-review.md](reviews/2026-07-14-rc-integration-heavy-review.md)
+
 ---
 
 ## Prerequisites (phone path)
@@ -34,14 +37,21 @@ curl -s -H 'ngrok-skip-browser-warning: 1' \
 # Tunnel agent
 launchctl print gui/$(id -u)/com.velocityworks.ngrok-rocketchat | head -15
 
-# Operator agent
-launchctl print gui/$(id -u)/com.velocityworks.rocketchat-operator | head -20
+# Operator agents (one per bot)
+for label in rocketchat-operator rocketchat-hermes-operator \
+  rocketchat-agy-operator rocketchat-claude-operator; do
+  echo "=== $label ==="
+  launchctl print "gui/$(id -u)/com.velocityworks.$label" 2>/dev/null | head -8
+done
 
 # Containers
 cd ~/.grok/agency/ops/rocketchat && docker compose ps
 
-# Recent operator log
-tail -n 40 ~/logs/rocketchat-dm-wake/operator-agent.log
+# Recent operator logs
+tail -n 20 ~/logs/rocketchat-dm-wake/operator-agent.log
+tail -n 10 ~/logs/rocketchat-hermes-wake/operator-agent.log
+tail -n 10 ~/logs/rocketchat-agy-wake/operator-agent.log
+tail -n 10 ~/logs/rocketchat-claude-wake/operator-agent.log
 ```
 
 Local only:
@@ -58,12 +68,18 @@ curl -s http://127.0.0.1:3000/api/info | head -c 120; echo
 # Tunnel
 launchctl kickstart -k gui/$(id -u)/com.velocityworks.ngrok-rocketchat
 
-# Operator
-launchctl kickstart -k gui/$(id -u)/com.velocityworks.rocketchat-operator
+# All operators
+uid=$(id -u)
+for label in rocketchat-operator rocketchat-hermes-operator \
+  rocketchat-agy-operator rocketchat-claude-operator; do
+  launchctl kickstart -k "gui/${uid}/com.velocityworks.${label}" 2>/dev/null || true
+done
 
 # Rocket.Chat stack
 cd ~/.grok/agency/ops/rocketchat && docker compose up -d
 ```
+
+Roster / peer wake: `~/.grok/agency/ops/rocketchat/MULTI_OPERATOR.md`.
 
 Conference / Jitsi settings (admin API):
 

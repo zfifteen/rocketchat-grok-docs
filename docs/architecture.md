@@ -1,14 +1,15 @@
 # Architecture
 
-**Last reviewed:** 2026-07-10
+**Last reviewed:** 2026-07-14
 
 ---
 
 ## Purpose
 
 Give the principal a phone- and desktop-reachable Rocket.Chat workspace where
-messages to **`grok`** wake the local Grok CLI, with project-aware working
-directories, optional voice notes, and optional conference call answer.
+messages to **`grok`**, **`hermes`**, **`agy`**, or **`claude`** wake that bot’s
+local CLI, with project-aware working directories, optional voice notes, and
+optional conference call answer (Grok Call path).
 
 ---
 
@@ -42,13 +43,15 @@ directories, optional voice notes, and optional conference call answer.
 | --- | --- | --- |
 | Chat server | Docker Compose `agency-rocketchat` | containers |
 | Public edge | ngrok Hobbyist domain | `com.velocityworks.ngrok-rocketchat` |
-| Operator bridge | `wake/rc_operator_agent.py` | `com.velocityworks.rocketchat-operator` |
+| Operator bridge (×N) | `wake/rc_operator_agent.py` | One launchd per bot (`…-operator`, `…-hermes-operator`, `…-agy-operator`, `…-claude-operator`) |
 | Shared helpers | `wake/wake_lib.py` | imported |
-| Media posts | `wake/rc_post_media.py` | subprocess from Grok or tools |
-| Call bot | `call/rc_call_bot.py` | spawned on conference join |
-| LLM / tools | Grok CLI (`GROK_BIN`) | child of operator |
-| Continuity cwd (DMs) | `~/.grok/agency` | Grok `--cwd` |
-| Channel cwd | `~/IdeaProjects/<slug>` | Grok `--cwd` |
+| Media posts | `wake/rc_post_media.py` | subprocess from any bot wake |
+| Call bot | `call/rc_call_bot.py` | Grok conference path only |
+| LLM / tools | Grok / Hermes / Antigravity CLIs | child of that bot’s operator |
+| Continuity cwd (DMs) | `~/.grok/agency` | bot CLI `--cwd` |
+| Channel cwd | `~/IdeaProjects/<slug>` | bot CLI `--cwd` |
+
+Roster: `ops/rocketchat/MULTI_OPERATOR.md`.
 
 ---
 
@@ -56,13 +59,15 @@ directories, optional voice notes, and optional conference call answer.
 
 | Role | RC username | Purpose |
 | --- | --- | --- |
-| Principal (you) | `principal` | Admin + human messages that wake Grok |
-| Operator | `grok` | Bot presence, replies, media, call join |
+| Principal (you) | `principal` | Admin + human; free-wake DMs; tags bots in channels |
+| Operator | `grok` | Grok Build CLI; media; Call join |
+| Operator | `hermes` | Hermes CLI |
+| Operator | `agy` | Antigravity (Gemini) CLI |
+| Operator | `claude` | Antigravity backend + Claude model pin |
 
-Credentials: `~/.grok/agency/secrets/rocketchat.env` only.
+Credentials: **one secrets file per bot** under `~/.grok/agency/secrets/` (mode 600). Never share usernames across processes.
 
-The operator filters for **principal** traffic (not every user in every room).
-Same room → same Grok session via `--resume` (session continuity per room).
+Wake filter (`should_enqueue_llm_wake`): not self; principal free-wake in DMs; shared rooms need `@bot`; **peer tag wake** (`RC_PEER_TAG_WAKE`, default on) allows any author who @mentions the bot. Same room → same session resume key per bot.
 
 ---
 
@@ -72,7 +77,7 @@ Same room → same Grok session via `--resume` (session continuity per room).
 | --- | --- | --- |
 | Primary wake | WebSocket realtime | Low latency; room membership re-scan ~60s |
 | Backup wake | HTTP poll (`rc_dm_poll.py`) | launchd exists; **off by default** (lag) |
-| Replies | 👀 on principal + activity bubble (thought stream) then `chat.update` | **One answer bubble** — never a second answer post |
+| Replies | 👀 on triggering msg + activity bubble (thought stream) then `chat.update` | **One answer bubble** — never a second answer post |
 | Images | `rc_post_media.py` + ledger | Never double `rooms.mediaConfirm` |
 
 Standing rule: `ops/rocketchat/NO_DUPLICATE_POSTS.md`.

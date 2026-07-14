@@ -1,27 +1,34 @@
 # Message flow
 
-**Last reviewed:** 2026-07-12
+**Last reviewed:** 2026-07-14 (multi-operator + peer tag wake)
 
 ---
 
 ## A. Normal text (DM or joined channel)
 
-1. **Principal** sends a message in a room the operator watches  
-   (DM with `grok`, or a channel/group `grok` has joined).
-2. **Rocket.Chat** delivers an event over the operator WebSocket  
+Live operators: **`grok`**, **`hermes`**, **`agy`**, **`claude`** — each runs its own  
+`rc_operator_agent.py` process (see `ops/rocketchat/MULTI_OPERATOR.md`).
+
+1. An author sends a message in a room that operator watches  
+   (DM with that bot, or a channel/group the bot has joined).
+2. **Rocket.Chat** delivers an event over that operator’s WebSocket  
    (`rc_operator_agent.py`).
-3. Operator **filters** (principal-only, not self, not already handled).
-4. Operator reacts **👀** on the **principal** message (kept after done).  
-5. Operator posts one **activity** bubble as `grok` (initial `…`; live **thought**  
-   stream from headless `streaming-json` when `RC_WAKE_STREAM` is on — default).  
+3. Operator **filters** via `should_enqueue_llm_wake` (not self, not already handled):
+   - **Principal:** free-wake in DMs; channels need `@operator` when  
+     `RC_REQUIRE_MENTION=1` + scope `channels`; `!`/`/` control plane exempt.
+   - **Anyone else** (peer bots, other humans): only if `RC_PEER_TAG_WAKE=1`  
+     (default **on**) **and** the message `@mentions` this operator.
+4. Operator reacts **👀** on the triggering message (kept after done).  
+5. Operator posts one **activity** bubble as that bot (initial `…`; live **thought**  
+   stream from headless streaming when enabled for that backend).  
 6. Operator builds a wake package:
-   - inject from `reply_prompt.txt` + room metadata  
+   - inject from that bot’s reply prompt + room metadata  
    - resolve **cwd** (DM → agency; channel → IdeaProjects slug / override)  
-   - spawn **Grok CLI** with `--cwd`, often `--resume` for same room  
-   - Grok writes the **final answer to a reply file** (not direct RC API for text).
+   - spawn backend CLI (`grok` / `hermes` / `agy`) with `--cwd`, often session resume  
+   - CLI writes the **final answer to a reply file** (not direct RC API for text).
 7. Operator **`chat.update`s** the activity bubble with the final answer only.  
    **No second bubble.**
-7. Optional: Grok may shell out to `rc_post_media.py` for images/files  
+8. Optional: agent may shell out to `rc_post_media.py` for images/files  
    (ledgered; one confirm only).
 
 ### Same-room continuity
@@ -125,6 +132,8 @@ prior silence root cause.
 | Media only via helper | `rc_post_media.py` + `media-post-ledger.json` |
 | No duplicate posts | See `NO_DUPLICATE_POSTS.md` |
 | Principal-only wake | Other users do not trigger Grok by default |
+| Tag-to-talk (multi-operator) | With `RC_REQUIRE_MENTION=1` + scope `channels`: channel/group LLM wakes need `@grok` / `@hermes` / `@agy` / `@claude` for that bot; DMs free-wake; `!`/`/` control plane exempt |
+| Peer tag wake | `RC_PEER_TAG_WAKE=1` (default on): non-principal authors who `@bot` can wake that bot; self-posts never wake |
 | Channel cwd isolation | Code/tools land in the mapped project, not always agency |
 
 ---
