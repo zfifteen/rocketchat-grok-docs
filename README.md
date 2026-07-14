@@ -25,7 +25,7 @@ so the stack stays navigable.
 4. **[Operations](docs/operations.md)** — status, restart, tests, common fixes  
 5. **[Related systems](docs/related-systems.md)** — agency spine, PGS hourly notify, Twilio  
 6. **[Multi-agent integration guide](docs/agent-integration-guide.md)** — **for other agents:** create RC user, secrets, parallel operator, tag-to-talk, launchd, verify  
-6a. **[Multi-round collab](docs/multi-round-collab.md)** — Grok lead, return-notify, one protocol for all four (runtime shipped)  
+6a. **[Multi-round collab](docs/multi-round-collab.md)** — Grok lead, return-notify, principal open = `@grok` only, quality-gated hops (issue [#2](https://github.com/zfifteen/rocketchat-grok-docs/issues/2); mirror [`ops/rocketchat/`](ops/rocketchat/))  
 7. **[Improvements backlog](docs/improvements/INDEX.md)** — ranked suggestions; each has requirements + test plan  
 8. **[Code review findings (2026-07-14)](docs/reviews/2026-07-14-rc-integration-heavy-review.md)** — Heavy review backlog (crash safety, media, voice auth, docs drift); address later  
 9. **[Goal: install refactor → public share](docs/goals/install-refactor-then-public-share.md)** — **parked program** (local config first, package later; not started)  
