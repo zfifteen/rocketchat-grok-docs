@@ -1,10 +1,13 @@
 # Improvements index
 
-**Last updated:** 2026-07-10  
+**Last updated:** 2026-07-14  
 **Parent project:** [rocketchat-grok-docs README](../../README.md)  
 **Scope:** Suggested configuration and ops improvements for the live Rocket.Chat ↔ Grok stack (`~/.grok/agency/ops/rocketchat/` and related paths).
 
 This folder is the **backlog package**: each item has a requirements document and a test plan. Items are ordered **most impactful first** (same ranking as the configuration deep dive). Status here is documentation only until work is implemented.
+
+**Cross-cutting code review (not yet turned into IMP-21+):**  
+[2026-07-14 RC integration Heavy review](../reviews/2026-07-14-rc-integration-heavy-review.md) — crash safety, state locking, media ledger, public voice auth, test gaps, docs drift. Prefer that doc when planning reliability work; promote individual IDs into new IMP folders when implementing.
 
 ---
 
@@ -17,6 +20,7 @@ This folder is the **backlog package**: each item has a requirements document an
 | How to verify that improvement | `NN-*/test-plan.md` |
 | System context | [Architecture](../architecture.md), [Filesystem map](../filesystem-map.md), [Operations](../operations.md) |
 | Runtime runbook | `~/.grok/agency/ops/ROCKETCHAT.md` |
+| Full-stack review findings | [reviews/2026-07-14-…](../reviews/2026-07-14-rc-integration-heavy-review.md) |
 
 Each improvement folder links: **Index → Requirements ↔ Test plan**.
 
