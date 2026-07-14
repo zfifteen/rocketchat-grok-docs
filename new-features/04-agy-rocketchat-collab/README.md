@@ -1,7 +1,7 @@
 # Feature 04 — Antigravity (agy) dual-peer collab via Rocket.Chat channel
 
 **Bundle home:** `new-features/04-agy-rocketchat-collab/`  
-**Status:** Documentation only (no runtime implementation in this package)  
+**Status:** Implemented in production operator (`rc_operator_agent.py` supports `RC_WAKE_BACKEND=agy`)  
 **Parent index:** [`../README.md`](../README.md)
 
 Long-horizon Grok↔`agy` collab: dual accounts, @mention handoffs, many-turn durable sessions.
@@ -44,13 +44,6 @@ Normative baseline: [spec.md](./spec.md). **v1 channel protocol:** [NF-SPEC-10](
 2. [spec.md](./spec.md) — normative shalls, architecture, acceptance  
 3. [test-plan.md](./test-plan.md) — how to prove FR-A* / AC-A* (NF-TP-04)  
 4. [profiles/](./profiles/) — draft L2 identity for `agy` and Grok inject  
-
-## Explicit non-goals of this package
-
-- Implementing channel wiring, operator patches, launchd, or RC user creation  
-- Installing draft profiles into `~/.gemini` or production `wake/`  
-- Replacing the CLI-only `agy-cli-collab` skill with MCP  
-- Implementation plan (NF-IP-04 deferred)  
 
 ## Related live systems (unchanged)
 

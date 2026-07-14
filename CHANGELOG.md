@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-14
+
+- **Multi-agent integration guide:** [docs/agent-integration-guide.md](docs/agent-integration-guide.md) — step-by-step for other agents to create an RC user, isolated secrets/state/logs, parallel operator + launchd, tag-to-talk, backend notes (Grok/Hermes), verification checklist, pitfalls. Runtime pointer: `~/.grok/agency/ops/rocketchat/AGENT_INTEGRATION_GUIDE.md`. Linked from README Start here.
+- **Heavy code review findings documented:** [docs/reviews/2026-07-14-rc-integration-heavy-review.md](docs/reviews/2026-07-14-rc-integration-heavy-review.md) — severity-ranked backlog (C1–C4, H1–H7, medium/low), priority fix order, P0 tests, edge-case scorecard, docs drift, collab posture. Linked from README + improvements INDEX. Findings only; remediations not implemented in this pass.
+- **Auto-create default ON** (runtime, same day): `RC_AUTO_CREATE_PROJECTS=1` in code/launchd/template; IMP-19 README notes supersede default-off acceptance. Related to review H7/M17.
+- **Antigravity backend formally documented:** `agent-integration-guide.md` updated to list `agy` as a first-class supported backend. Runtime `rc_commands.py` patched to support global `RC_WAKE_MODEL` override via launchd environment variables (enabling dedicated secondary operators like `claude`).
+
 ## 2026-07-13
 
 - **README hero banner:** geometric brand mark (candidate 4) at `docs/assets/hero-banner.jpg`; candidates retained under `docs/assets/banner-candidates/`.
