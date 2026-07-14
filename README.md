@@ -2,13 +2,11 @@
 
 ![Rocket.Chat ↔ Grok — documentation map](docs/assets/hero-banner.jpg)
 
-**What this is:** a read-only documentation project that explains the working
-Rocket.Chat + Grok integration on this Mac: how messages flow, which processes
-run, and **where every piece lives on disk**.
-
-**What this is not:** the integration code itself. Runtime code, secrets, and
-agency continuity still live under `~/.grok/agency/` (and related OS paths).
-This repo only documents them so the spread is navigable.
+**Scope:** This is a read-only documentation map of the working Rocket.Chat +
+Grok integration on this Mac: message flow, processes, and **where every piece
+lives on disk**. Runtime code, secrets, and agency continuity live under
+`~/.grok/agency/` (and related OS paths). This repo documents those locations
+so the stack stays navigable.
 
 | Field | Value |
 | --- | --- |
@@ -27,11 +25,12 @@ This repo only documents them so the spread is navigable.
 4. **[Operations](docs/operations.md)** — status, restart, tests, common fixes  
 5. **[Related systems](docs/related-systems.md)** — agency spine, PGS hourly notify, Twilio  
 6. **[Improvements backlog](docs/improvements/INDEX.md)** — ranked suggestions; each has requirements + test plan  
-7. **[Goal: install refactor → public share](docs/goals/install-refactor-then-public-share.md)** — **parked program** (local config first, package later; not started)  
-8. **[Voice call implementation plan](docs/implementation-plan-voice-calls.md)** — Path C fix framing (historical / lab)  
-9. **[Voice/media research path](docs/research-voice-media-path.md)** — **recommended** architecture (RC Call → SFU/agent → Grok Voice)  
-10. **[Preflight voice test protocol](docs/preflight-voice-test-protocol.md)** — test **before** principal Call (T0–T2 agent-run; T5 you)  
-11. **[New features index](new-features/README.md)** — one numbered subfolder per product feature (related docs co-located): **[01 voice Call](new-features/01-true-voice-in-rc-call/)**, **[02 streaming Thinking](new-features/02-streaming-thinking-telemetry/)**, **[03 phone control plane](new-features/03-phone-control-plane/)**, **[04 agy collab](new-features/04-agy-rocketchat-collab/)**, **[10 lead–peer full collab](new-features/10-lead-peer-full-collab/)** (**NF-SPEC-10**), **[05 reading attachments](new-features/05-reading-attachments/)**; docs only
+7. **[Code review findings (2026-07-14)](docs/reviews/2026-07-14-rc-integration-heavy-review.md)** — Heavy review backlog (crash safety, media, voice auth, docs drift); address later  
+8. **[Goal: install refactor → public share](docs/goals/install-refactor-then-public-share.md)** — **parked program** (local config first, package later; not started)  
+9. **[Voice call implementation plan](docs/implementation-plan-voice-calls.md)** — Path C fix framing (historical / lab)  
+10. **[Voice/media research path](docs/research-voice-media-path.md)** — **recommended** architecture (RC Call → SFU/agent → Grok Voice)  
+11. **[Preflight voice test protocol](docs/preflight-voice-test-protocol.md)** — test **before** principal Call (T0–T2 agent-run; T5 you)  
+12. **[New features index](new-features/README.md)** — one numbered subfolder per product feature (related docs co-located): **[01 voice Call](new-features/01-true-voice-in-rc-call/)**, **[02 streaming Thinking](new-features/02-streaming-thinking-telemetry/)**, **[03 phone control plane](new-features/03-phone-control-plane/)**, **[04 agy collab](new-features/04-agy-rocketchat-collab/)**, **[10 lead–peer full collab](new-features/10-lead-peer-full-collab/)** (**NF-SPEC-10**), **[05 reading attachments](new-features/05-reading-attachments/)**; docs only
 
 ---
 
@@ -71,21 +70,21 @@ Grok CLI  (--cwd agency or ~/IdeaProjects/<channel>)
 
 ---
 
-## Why files are spread out
+## Where each piece lives
 
-| Kind of thing | Typical home | Why not all in one folder |
+| Kind of thing | Typical home | Why this home |
 | --- | --- | --- |
 | Integration code | `~/.grok/agency/ops/rocketchat/` | Built as agency ops, next to continuity |
 | Continuity / mandate | `~/.grok/agency/` | Source of truth for the agency program |
-| Secrets | `~/.grok/agency/secrets/` | Mode 600; not for git |
+| Secrets | `~/.grok/agency/secrets/` | Mode 600; kept out of git |
 | Always-on jobs | `~/Library/LaunchAgents/` | macOS launchd requirement |
 | Logs / ledgers | `~/logs/rocketchat-dm-wake/` | Long-running process I/O |
 | Channel workspaces | `~/IdeaProjects/<slug>/` | Grok works *in* project dirs |
-| This documentation | `~/IdeaProjects/rocketchat-grok-docs/` | Stable map without moving runtime |
+| This documentation | `~/IdeaProjects/rocketchat-grok-docs/` | Stable map; runtime stays in place |
 
-A future refactor could move **code** into an IdeaProjects app repo; secrets,
-launchd, logs, Docker volumes, and agency state would still stay outside.
-See [architecture notes on layout](docs/architecture.md#layout-rationale).
+A future refactor could move **code** into an IdeaProjects app repo. Secrets,
+launchd, logs, Docker volumes, and agency state would remain in their current
+homes. See [architecture notes on layout](docs/architecture.md#layout-rationale).
 
 ---
 
@@ -114,4 +113,4 @@ When the live stack moves (new path, new launchd label, code extract):
 2. Bump the **Last reviewed** line in that file.
 3. Optionally add a one-line note under [CHANGELOG.md](CHANGELOG.md).
 
-Do **not** copy secrets into this repo. Document only *paths* and *variable names*.
+Keep secrets out of this repo. Document only *paths* and *variable names*.
