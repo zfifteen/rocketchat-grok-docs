@@ -108,7 +108,10 @@ Also:
 
 | Plist | Label | Starts | Default |
 | --- | --- | --- | --- |
-| `~/Library/LaunchAgents/com.velocityworks.rocketchat-operator.plist` | `com.velocityworks.rocketchat-operator` | `wake/run_operator_agent.sh` → `rc_operator_agent.py` | **KeepAlive on** (primary) |
+| `~/Library/LaunchAgents/com.velocityworks.rocketchat-operator.plist` | `com.velocityworks.rocketchat-operator` | `wake/run_operator_agent.sh` → grok | **KeepAlive on** |
+| `~/Library/LaunchAgents/com.velocityworks.rocketchat-hermes-operator.plist` | `…-hermes-operator` | `wake/run_hermes_operator_agent.sh` | **KeepAlive on** |
+| `~/Library/LaunchAgents/com.velocityworks.rocketchat-agy-operator.plist` | `…-agy-operator` | `wake/run_agy_operator_agent.sh` | **KeepAlive on** |
+| `~/Library/LaunchAgents/com.velocityworks.rocketchat-claude-operator.plist` | `…-claude-operator` | `wake/run_claude_operator_agent.sh` | **KeepAlive on** |
 | `~/Library/LaunchAgents/com.velocityworks.ngrok-rocketchat.plist` | `com.velocityworks.ngrok-rocketchat` | `run_ngrok.sh` | **KeepAlive on** |
 | `~/Library/LaunchAgents/com.velocityworks.rocketchat-dm-wake.plist` | `com.velocityworks.rocketchat-dm-wake` | poll path | **Disabled by default** (backup; was lag source) |
 
@@ -120,8 +123,11 @@ Plists currently hardcode absolute paths under `/Users/velocityworks/…`.
 
 | Path | Role |
 | --- | --- |
-| `~/logs/rocketchat-dm-wake/` | Operator / poll / call / media root |
-| `…/operator-agent.log` | Main operator application log |
+| `~/logs/rocketchat-dm-wake/` | Grok operator / poll / call / media root |
+| `~/logs/rocketchat-hermes-wake/` | Hermes operator logs |
+| `~/logs/rocketchat-agy-wake/` | Antigravity (`agy`) operator logs |
+| `~/logs/rocketchat-claude-wake/` | Claude operator logs |
+| `…/operator-agent.log` | Main operator application log (per log dir) |
 | `…/operator-agent.stdout.log` / `.stderr.log` | Process streams |
 | `…/operator-launchd.*.log` | launchd wrapper streams |
 | `…/media-post-ledger.json` | Idempotency ledger for media posts |
@@ -208,10 +214,16 @@ PGS must not wake the operator path for notify; it is a separate REST poster.
 
 ~/Library/LaunchAgents/
 ├── com.velocityworks.rocketchat-operator.plist
+├── com.velocityworks.rocketchat-hermes-operator.plist
+├── com.velocityworks.rocketchat-agy-operator.plist
+├── com.velocityworks.rocketchat-claude-operator.plist
 ├── com.velocityworks.ngrok-rocketchat.plist
 └── com.velocityworks.rocketchat-dm-wake.plist   # usually off
 
-~/logs/rocketchat-dm-wake/     # operator + media + call
+~/logs/rocketchat-dm-wake/     # grok + media + call
+~/logs/rocketchat-hermes-wake/
+~/logs/rocketchat-agy-wake/
+~/logs/rocketchat-claude-wake/
 ~/logs/ngrok-rocketchat/       # tunnel
 
 ~/IdeaProjects/

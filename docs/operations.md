@@ -1,6 +1,6 @@
 # Operations
 
-**Last reviewed:** 2026-07-10
+**Last reviewed:** 2026-07-14
 
 Authoritative short runbook for URLs and phone setup remains:
 
