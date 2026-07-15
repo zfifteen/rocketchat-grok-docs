@@ -38,3 +38,10 @@ Canonical: `~/.grok/agency/ops/rocketchat/MULTI_OPERATOR.md`
 
 **Tests:** `ops/rocketchat/tests/test_multi_round_collab.py`  
 **Live smoke (optional):** `RC_LIVE_COLLAB_SMOKE=1 python3 ops/rocketchat/tests/live_four_agent_collab_smoke.py`
+
+## Review follow-ups (PR #3)
+
+- Atomic RMW via `update_shared_state` (flock over load→mutate→write).
+- `message_is_collab_return` requires operator template shape.
+- Epoch reuses active epoch unless force/DONE.
+- Tests default to repo mirror; `RC_TEST_RUNTIME=1` for wake_lib/prompts.

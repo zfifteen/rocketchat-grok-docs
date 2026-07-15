@@ -18,10 +18,16 @@ This tree holds **reviewable copies** of the multi-round collab surface for PR r
 | `MULTI_ROUND_OPERATOR_NOTES.md` | Roster / ops notes section |
 | `skills/rc-multi-round-collab.SKILL.md` | Skill mirror |
 
-## Run tests against live runtime
+## Run tests
 
 ```bash
-python3 ~/.grok/agency/ops/rocketchat/tests/test_multi_round_collab.py
+# Pure policy against **this mirror** (default; PR self-check)
+python3 ops/rocketchat/tests/test_multi_round_collab.py
+
+# Optional runtime integration (wake_lib / reply prompts / skill)
+RC_TEST_RUNTIME=1 python3 ops/rocketchat/tests/test_multi_round_collab.py
 ```
 
-The mirrored test file uses `Path.home() / ".grok/agency/ops/rocketchat/wake"` so it always exercises the **deployed** helpers.
+`POLICY_WAKE` defaults to `Path(__file__).resolve().parents[1] / "wake"` when
+`rc_multi_round_collab.py` is present there. Runtime-only cases skip unless
+`RC_TEST_RUNTIME=1`.

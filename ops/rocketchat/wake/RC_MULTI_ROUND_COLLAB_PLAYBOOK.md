@@ -53,9 +53,9 @@ Peers may also assign each other with `@peer` when the lead’s instructions req
 1. **Tag-to-talk in shared rooms:** you only wake when someone `@you` (or you free-wake in your own DM).
 2. **Self-posts never wake** (loop prevention).
 3. **Principal multi-@ lead-only:** if the principal tags `@grok` and ≥1 peer in one shared-room message, **only grok** enqueues; peers wait for lead assign (`RC_MULTI_ROUND_PRINCIPAL_LEAD_ONLY`, default on).
-4. **Return-notify (operator):** when a **peer** finishes a collab wake in a shared room, the operator posts a short `@assigner` (or `@grok` if assigner is not a bot) so the next hop runs without the principal re-tagging — **except** after lead DONE, pure standing-by acks, and empty/error operator templates (quality gate).
-5. After **lead done**, return-notify is **suppressed**. Lead does not LLM-wake on further `collab-return` pings.
-6. **Epoch:** lead kickoff with peer `@` opens a collab epoch; return-notify may stamp `epoch=…` for bookkeeping.
+4. **Return-notify (operator):** when a **peer** finishes a collab wake in a shared room, the operator posts a short `@assigner` (or `@grok` if assigner is not a bot) so the next hop runs without the principal re-tagging — **except** after lead DONE, pure standing-by acks, and empty/error operator templates (quality gate). The notify is posted under the **local operator's RC identity** (each peer process uses its own secrets; identity routing is internal).
+5. After **lead done**, return-notify is **suppressed**. Lead does not LLM-wake on further operator-shaped `collab-return` pings.
+6. **Epoch:** first lead peer-assign opens a collab epoch; later lead peer-assigns **reuse** the same epoch (merge assignees, keep delivered) until DONE or a forced new epoch.
 
 ---
 

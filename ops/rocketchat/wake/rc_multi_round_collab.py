@@ -24,12 +24,17 @@ from typing import Any, Mapping
 # --- Constants ----------------------------------------------------------------
 
 GROK_LEAD = "grok"
-PRINCIPAL = "principal"
+PRINCIPAL = "principal"  # default username; override via RC_PRINCIPAL_USERNAME
 ALL_OPERATORS = frozenset({"grok", "hermes", "agy", "claude"})
 PEER_OPERATORS = frozenset({"hermes", "agy", "claude"})
 
 # Posted by the operator after a peer collab wake completes (wakes assigner|lead).
 COLLAB_RETURN_MARKER = "collab-return"
+# Operator template shape only — prose discussing "collab-return" must not match.
+_COLLAB_RETURN_TEMPLATE_RE = re.compile(
+    r"(?<!\w)@([A-Za-z0-9._-]+)\s+collab-return\s+from\s+`?([A-Za-z0-9._-]+)`?",
+    re.I,
+)
 
 DEFAULT_PLAYBOOK_NAME = "RC_MULTI_ROUND_COLLAB_PLAYBOOK.md"
 DEFAULT_STATE_NAME = "multi_round_collab_state.json"
@@ -94,6 +99,13 @@ def multi_round_enabled(env: Mapping[str, str] | None = None) -> bool:
     if "RC_MULTI_ROUND_COLLAB" in e:
         return _env_truthy(str(e.get("RC_MULTI_ROUND_COLLAB", "")))
     return True
+
+
+def principal_username(env: Mapping[str, str] | None = None) -> str:
+    """RC_PRINCIPAL_USERNAME override; default `principal`."""
+    e = env if env is not None else os.environ
+    raw = (e.get("RC_PRINCIPAL_USERNAME") or "").strip()
+    return normalize_username(raw) if raw else PRINCIPAL
 
 
 def playbook_path(env: Mapping[str, str] | None = None, *, wake_dir: Path | None = None) -> Path:
@@ -184,10 +196,15 @@ def resolve_return_notify_target(
 
 
 def message_is_collab_return(text: str | None) -> bool:
-    """True if body is an operator-generated return-notify ping."""
+    """
+    True if body matches the operator return-notify template shape.
+
+    Requires ``@target collab-return from `peer``` — bare substring
+    "collab-return" in prose (e.g. playbook discussion) must not match.
+    """
     if not text:
         return False
-    return COLLAB_RETURN_MARKER in text.lower()
+    return bool(_COLLAB_RETURN_TEMPLATE_RE.search(str(text)))
 
 
 def extract_mention_usernames(text: str | None) -> set[str]:
@@ -385,17 +402,15 @@ def reply_body_useful_for_return_notify(
     Empty / operator error templates must not spam the lead. Structured
     \"blocked + why + next\" failures may still notify.
     """
+    body = (reply_body or "").strip()
+    phase_u = (phase or "").upper()
+    # Decision table: empty body + hard fail → never notify
+    if not body and rc is not None and int(rc) != 0:
+        return False
+    if not body and phase_u in {"FINAL_ERR", "PHASE_FINAL_ERR", "ERR"}:
+        return False
     if reply_body_is_operator_empty_failure(reply_body):
-        # Hard process fail with empty body
-        if rc is not None and int(rc) != 0 and not (reply_body or "").strip():
-            return False
-        if (phase or "").upper() in {"FINAL_ERR", "PHASE_FINAL_ERR", "ERR"}:
-            if not (reply_body or "").strip() or reply_body_is_operator_empty_failure(
-                reply_body
-            ):
-                return False
-        if reply_body_is_operator_empty_failure(reply_body):
-            return False
+        return False
     return True
 
 
@@ -435,7 +450,7 @@ def principal_multi_mention_lead_only(
         return False
     if not shared_room_type(room_type):
         return False
-    if normalize_username(author) != PRINCIPAL:
+    if normalize_username(author) != principal_username(env):
         return False
     op = normalize_username(operator)
     lead_u = normalize_username(lead) or GROK_LEAD
@@ -552,6 +567,10 @@ def should_suppress_return_notify_for_lead_done(
 
 
 # --- Durable shared state (lead_done per room) ---------------------------------
+#
+# Cross-process safety: four launchd operators share one JSON file. Every
+# read-modify-write must hold the flock for the **entire** critical section
+# (load → mutate → write). Writing under flock alone is last-writer-wins.
 
 
 def empty_state() -> dict[str, Any]:
@@ -560,12 +579,6 @@ def empty_state() -> dict[str, Any]:
 
 def _flock_path(state_path: Path) -> Path:
     return state_path.with_suffix(state_path.suffix + ".lock")
-
-
-def load_shared_state(path: Path | None = None, env: Mapping[str, str] | None = None) -> dict[str, Any]:
-    p = path or shared_state_path(env)
-    with _state_lock:
-        return _load_shared_state_unlocked(p)
 
 
 def _load_shared_state_unlocked(p: Path) -> dict[str, Any]:
@@ -584,15 +597,33 @@ def _load_shared_state_unlocked(p: Path) -> dict[str, Any]:
     return data
 
 
+def _write_shared_state_unlocked(p: Path, state: dict[str, Any]) -> None:
+    p.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(state, indent=2, sort_keys=True) + "\n"
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(payload, encoding="utf-8")
+    tmp.replace(p)
+
+
+def load_shared_state(path: Path | None = None, env: Mapping[str, str] | None = None) -> dict[str, Any]:
+    """Read-only snapshot (no flock). Prefer update_shared_state for mutations."""
+    p = path or shared_state_path(env)
+    with _state_lock:
+        return _load_shared_state_unlocked(p)
+
+
 def save_shared_state(
     state: dict[str, Any],
     path: Path | None = None,
     env: Mapping[str, str] | None = None,
 ) -> None:
+    """
+    Write a full state dict under flock.
+
+    Prefer update_shared_state for RMW — callers that load outside the lock
+    and then save can still lose concurrent updates.
+    """
     p = path or shared_state_path(env)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(state, indent=2, sort_keys=True) + "\n"
-    tmp = p.with_suffix(".tmp")
     lock_p = _flock_path(p)
     with _state_lock:
         try:
@@ -601,14 +632,45 @@ def save_shared_state(
             with lock_p.open("a+", encoding="utf-8") as lf:
                 fcntl.flock(lf.fileno(), fcntl.LOCK_EX)
                 try:
-                    tmp.write_text(payload, encoding="utf-8")
-                    tmp.replace(p)
+                    _write_shared_state_unlocked(p, state)
                 finally:
                     fcntl.flock(lf.fileno(), fcntl.LOCK_UN)
         except Exception:
-            # Fallback without flock (tests / non-Unix)
-            tmp.write_text(payload, encoding="utf-8")
-            tmp.replace(p)
+            _write_shared_state_unlocked(p, state)
+
+
+def update_shared_state(
+    mutator,
+    path: Path | None = None,
+    env: Mapping[str, str] | None = None,
+) -> Any:
+    """
+    Atomic cross-process RMW: flock → load → mutator(state) → write → unlock.
+
+    ``mutator(state)`` may mutate ``state`` in place and may return a value
+    (returned to the caller). Thread Lock alone is insufficient across processes.
+    """
+    p = path or shared_state_path(env)
+    lock_p = _flock_path(p)
+    with _state_lock:
+        try:
+            import fcntl
+
+            with lock_p.open("a+", encoding="utf-8") as lf:
+                fcntl.flock(lf.fileno(), fcntl.LOCK_EX)
+                try:
+                    st = _load_shared_state_unlocked(p)
+                    result = mutator(st)
+                    _write_shared_state_unlocked(p, st)
+                    return result
+                finally:
+                    fcntl.flock(lf.fileno(), fcntl.LOCK_UN)
+        except Exception:
+            # Fallback (tests / non-Unix): process-local lock only
+            st = _load_shared_state_unlocked(p)
+            result = mutator(st)
+            _write_shared_state_unlocked(p, st)
+            return result
 
 
 def get_room_collab_flags(state: Mapping[str, Any], room_id: str) -> dict[str, Any]:
@@ -670,9 +732,10 @@ def mark_lead_done(
     path: Path | None = None,
     env: Mapping[str, str] | None = None,
 ) -> None:
-    st = load_shared_state(path=path, env=env)
-    set_room_lead_done(st, room_id, done=True, at=at, mid=mid)
-    save_shared_state(st, path=path, env=env)
+    def _mut(st: dict[str, Any]) -> None:
+        set_room_lead_done(st, room_id, done=True, at=at, mid=mid)
+
+    update_shared_state(_mut, path=path, env=env)
 
 
 def clear_lead_done(
@@ -681,9 +744,10 @@ def clear_lead_done(
     path: Path | None = None,
     env: Mapping[str, str] | None = None,
 ) -> None:
-    st = load_shared_state(path=path, env=env)
-    set_room_lead_done(st, room_id, done=False)
-    save_shared_state(st, path=path, env=env)
+    def _mut(st: dict[str, Any]) -> None:
+        set_room_lead_done(st, room_id, done=False)
+
+    update_shared_state(_mut, path=path, env=env)
 
 
 def maybe_clear_lead_done_on_new_work(
@@ -711,7 +775,7 @@ def maybe_clear_lead_done_on_new_work(
         return False
     auth = normalize_username(author)
     # Only the human principal re-opens a closed collab.
-    if auth != PRINCIPAL:
+    if auth != principal_username(env):
         return False
     if lead_done_language_present(trigger_text) or reply_declares_lead_done(trigger_text):
         return False
@@ -723,10 +787,14 @@ def maybe_clear_lead_done_on_new_work(
     if re.search(r"\b(loop|stuck|pinging|close[-\s]?out)\b", text, re.I):
         if not re.search(r"\b(new\s+(goal|collab|task)|start\s+(a\s+)?new)\b", text, re.I):
             return False
-    if not room_lead_done(room_id, path=path, env=env):
-        return False
-    clear_lead_done(room_id, path=path, env=env)
-    return True
+
+    def _mut(st: dict[str, Any]) -> bool:
+        if not bool(get_room_collab_flags(st, room_id).get("lead_done")):
+            return False
+        set_room_lead_done(st, room_id, done=False)
+        return True
+
+    return bool(update_shared_state(_mut, path=path, env=env))
 
 
 def summary_from_reply(reply_body: str | None, *, limit: int = 160) -> str:
@@ -781,41 +849,59 @@ def open_collab_epoch(
     assignees: list[str] | set[str] | None = None,
     opened_by: str | None = None,
     mid: str | None = None,
+    force: bool = False,
     path: Path | None = None,
     env: Mapping[str, str] | None = None,
 ) -> str:
     """
-    Open a new collab epoch for the room; clears lead_done and delivered map.
+    Open or reuse a collab epoch for the room.
+
+    Default (force=False): if the room already has an active epoch (epoch set
+    and lead_done is false), **reuse** it and merge assignees — do not wipe
+    the delivered map. force=True or lead_done/no-epoch opens a fresh epoch
+    (clears delivered + lead_done).
+
     Returns epoch id string.
     """
     import time
     import uuid
 
-    epoch = f"e{int(time.time())}-{uuid.uuid4().hex[:8]}"
-    st = load_shared_state(path=path, env=env)
-    rooms = st.setdefault("rooms", {})
-    rid = str(room_id)
-    entry = dict(rooms.get(rid) or {})
-    entry["epoch"] = epoch
-    entry["lead_done"] = False
-    entry.pop("lead_done_at", None)
-    entry.pop("lead_done_mid", None)
-    if opened_by:
-        entry["opened_by"] = normalize_username(opened_by)
-    if mid:
-        entry["opened_mid"] = mid
-    asg = sorted(
-        {
-            normalize_username(a)
-            for a in (assignees or [])
-            if normalize_username(a) in ALL_OPERATORS
-        }
-    )
-    entry["assignees"] = asg
-    entry["delivered"] = {}
-    rooms[rid] = entry
-    save_shared_state(st, path=path, env=env)
-    return epoch
+    new_asg = {
+        normalize_username(a)
+        for a in (assignees or [])
+        if normalize_username(a) in ALL_OPERATORS
+    }
+
+    def _mut(st: dict[str, Any]) -> str:
+        rooms = st.setdefault("rooms", {})
+        if not isinstance(rooms, dict):
+            rooms = {}
+            st["rooms"] = rooms
+        rid = str(room_id)
+        entry = dict(rooms.get(rid) or {})
+        existing = entry.get("epoch")
+        active = bool(existing) and not bool(entry.get("lead_done"))
+        if active and not force:
+            # Reuse: merge assignees; keep delivered
+            prev = set(entry.get("assignees") or [])
+            entry["assignees"] = sorted(prev | new_asg)
+            rooms[rid] = entry
+            return str(existing)
+        epoch = f"e{int(time.time())}-{uuid.uuid4().hex[:8]}"
+        entry["epoch"] = epoch
+        entry["lead_done"] = False
+        entry.pop("lead_done_at", None)
+        entry.pop("lead_done_mid", None)
+        if opened_by:
+            entry["opened_by"] = normalize_username(opened_by)
+        if mid:
+            entry["opened_mid"] = mid
+        entry["assignees"] = sorted(new_asg)
+        entry["delivered"] = {}
+        rooms[rid] = entry
+        return epoch
+
+    return str(update_shared_state(_mut, path=path, env=env))
 
 
 def record_assignee_delivered(
@@ -826,18 +912,24 @@ def record_assignee_delivered(
     path: Path | None = None,
     env: Mapping[str, str] | None = None,
 ) -> None:
-    st = load_shared_state(path=path, env=env)
-    rooms = st.setdefault("rooms", {})
-    rid = str(room_id)
-    entry = dict(rooms.get(rid) or {})
-    delivered = dict(entry.get("delivered") or {})
+    # TODO(issue #2 P1): wire assignee_already_delivered into peer enqueue so
+    # bookkeeping becomes enforcement (skip re-wake when delivered this epoch
+    # unless explicit retry). Record alone is observability only.
     who = normalize_username(assignee)
-    delivered[who] = {"mid": mid or "", "ts": __import__("datetime").datetime.now(
+    ts = __import__("datetime").datetime.now(
         __import__("datetime").timezone.utc
-    ).isoformat()}
-    entry["delivered"] = delivered
-    rooms[rid] = entry
-    save_shared_state(st, path=path, env=env)
+    ).isoformat()
+
+    def _mut(st: dict[str, Any]) -> None:
+        rooms = st.setdefault("rooms", {})
+        rid = str(room_id)
+        entry = dict(rooms.get(rid) or {})
+        delivered = dict(entry.get("delivered") or {})
+        delivered[who] = {"mid": mid or "", "ts": ts}
+        entry["delivered"] = delivered
+        rooms[rid] = entry
+
+    update_shared_state(_mut, path=path, env=env)
 
 
 def assignee_already_delivered(

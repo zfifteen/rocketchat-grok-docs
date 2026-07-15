@@ -216,9 +216,14 @@ def main() -> int:
 
     first_bot: str | None = None
     saw_peer_tag_from_grok = False
-    collab_returns = 0
+    collab_return_mids: set[str] = set()
     saw_done = False
     deadline = time.time() + timeout_s
+    # Operator template shape (matches rc_multi_round_collab.message_is_collab_return)
+    _cr_re = re.compile(
+        r"(?<!\w)@([A-Za-z0-9._-]+)\s+collab-return\s+from\s+`?([A-Za-z0-9._-]+)`?",
+        re.I,
+    )
 
     while time.time() < deadline:
         msgs = _history(rid, count=80)
@@ -242,9 +247,10 @@ def main() -> int:
             if u == "grok" and (_mentions(t) & set(PEERS)):
                 saw_peer_tag_from_grok = True
                 log(f"grok_peer_assign mid={mid} peers={sorted(_mentions(t) & set(PEERS))}")
-            if COLLAB_RETURN in t.lower() and u in OPERATORS:
-                collab_returns += 1
-                log(f"collab_return mid={mid} from={u}")
+            if u in OPERATORS and mid and _cr_re.search(t):
+                if mid not in collab_return_mids:
+                    log(f"collab_return mid={mid} from={u}")
+                collab_return_mids.add(str(mid))
             if u == "grok" and _DONE_HINT.search(t):
                 # Prefer DONE without peer tags
                 if not (_mentions(t) & set(PEERS)):
@@ -252,14 +258,15 @@ def main() -> int:
                     log(f"lead_done mid={mid}")
                 else:
                     log(f"lead_done_language_with_peer_tags mid={mid} (anti-pattern)")
-        if first_bot and saw_peer_tag_from_grok and collab_returns >= 1 and saw_done:
+        if first_bot and saw_peer_tag_from_grok and len(collab_return_mids) >= 1 and saw_done:
             break
         time.sleep(8)
 
+    collab_returns = len(collab_return_mids)
     elapsed = time.time() - seed_ts
     log(
         f"summary first_bot={first_bot} peer_tag={saw_peer_tag_from_grok} "
-        f"collab_returns≈{collab_returns} done={saw_done} elapsed_s={elapsed:.0f}"
+        f"collab_returns={collab_returns} done={saw_done} elapsed_s={elapsed:.0f}"
     )
     log_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     log(f"transcript={log_path}")

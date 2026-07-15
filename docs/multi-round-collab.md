@@ -71,7 +71,7 @@ principal @grok goal          ← peers do not enqueue on multi-@ seed
 
 | Item | Behavior |
 | --- | --- |
-| **Collab epoch** | Lead peer-assign opens epoch; assignees + delivered map in shared state; return-notify may stamp `epoch=…`. |
+| **Collab epoch** | First lead peer-assign opens epoch; later assigns **reuse** (merge assignees, keep delivered) unless `force=True` / after DONE. Return-notify may stamp `epoch=…`. |
 | **Peer soft footer** | Optional `STATUS:` / `FOR:` / `EPOCH:` parse via `parse_peer_delivery_footer`. |
 | **Coalesce lead synthesis** | Deferred (not in this PR). |
 
@@ -79,7 +79,7 @@ principal @grok goal          ← peers do not enqueue on multi-@ seed
 
 | Item | Behavior |
 | --- | --- |
-| **Shared-state lock** | `fcntl.flock` around state save (Unix). |
+| **Shared-state RMW** | `update_shared_state` holds `fcntl.flock` for full load→mutate→write (cross-process safe). |
 | **Health snapshot** | `health_multi_round_fields`. |
 | **Full observability suite** | Deferred. |
 
@@ -96,15 +96,18 @@ principal @grok goal          ← peers do not enqueue on multi-@ seed
 ## Tests
 
 ```bash
-# Unit (runtime)
-python3 ~/.grok/agency/ops/rocketchat/tests/test_multi_round_collab.py
+# Pure unit suite (defaults to repo/mirror wake dir next to the test file)
+python3 ops/rocketchat/tests/test_multi_round_collab.py
+
+# + runtime integration (wake_lib, four reply prompts, skill)
+RC_TEST_RUNTIME=1 python3 ~/.grok/agency/ops/rocketchat/tests/test_multi_round_collab.py
 
 # Live smoke (principal secrets; posts to RC)
 RC_LIVE_COLLAB_SMOKE=1 RC_SMOKE_ROOM=general \
   python3 ~/.grok/agency/ops/rocketchat/tests/live_four_agent_collab_smoke.py
 ```
 
-**Unit suite acceptance (14 cases):** tag-to-talk gates, return-notify assigner|grok, lead DONE suppress, collab-return no re-emit, shared state roundtrip, principal multi-mention lead-only, quality gate empty failure, epoch+footer, playbook wiring including **Opening a collab**.
+**Unit suite acceptance (16 cases):** pure policy always; tag-to-talk gates gated by `RC_TEST_RUNTIME`; return-notify assigner|grok; lead DONE suppress; collab-return template matcher; atomic concurrent RMW; principal multi-mention lead-only; quality gate; epoch reuse+footer; playbook **Opening a collab**.
 
 ## Deploy (runtime Mac)
 
