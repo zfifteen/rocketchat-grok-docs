@@ -2,6 +2,7 @@
 
 ## 2026-07-14
 
+- **Multi-round collab hardening (issue #2):** P0 principal open = lead only; quality-gated return-notify; lead short-circuit after DONE retained; P1 partial epoch/footer/flock. Playbook v3 **Opening a collab**. Unit suite 14 cases; optional live smoke. Docs: [docs/multi-round-collab.md](docs/multi-round-collab.md); reviewable mirror [ops/rocketchat/](ops/rocketchat/). Issue [#2](https://github.com/zfifteen/rocketchat-grok-docs/issues/2).
 - **Multi-agent integration guide:** [docs/agent-integration-guide.md](docs/agent-integration-guide.md) — step-by-step for other agents to create an RC user, isolated secrets/state/logs, parallel operator + launchd, tag-to-talk, backend notes (Grok/Hermes), verification checklist, pitfalls. Runtime pointer: `~/.grok/agency/ops/rocketchat/AGENT_INTEGRATION_GUIDE.md`. Linked from README Start here.
 - **Heavy code review findings documented:** [docs/reviews/2026-07-14-rc-integration-heavy-review.md](docs/reviews/2026-07-14-rc-integration-heavy-review.md) — severity-ranked backlog (C1–C4, H1–H7, medium/low), priority fix order, P0 tests, edge-case scorecard, docs drift, collab posture. Linked from README + improvements INDEX. Findings only; remediations not implemented in this pass.
 - **Auto-create default ON** (runtime, same day): `RC_AUTO_CREATE_PROJECTS=1` in code/launchd/template; IMP-19 README notes supersede default-off acceptance. Related to review H7/M17.
