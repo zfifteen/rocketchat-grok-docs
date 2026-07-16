@@ -17,7 +17,7 @@ Locked product choices:
 | Rooms | Any shared channel/group |
 | Starts | Tag-to-talk (`@bot`) |
 | Open (clean path) | Principal tags **only `@grok`**; lead fans out |
-| Continuation | Operator **return-notify** → assigner if bot, else `grok` |
+| Continuation | Operator **return-notify** only when trigger author is a **bot** (lead/peer hop) → that assigner; **not** on principal→peer solo |
 | Stop | Lead plain-language DONE (**zero** peer `@tags`) |
 | Enforcement | Medium (playbook + return-notify; not hard hop FSM) |
 
