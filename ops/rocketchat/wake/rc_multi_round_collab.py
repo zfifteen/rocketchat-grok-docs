@@ -4,8 +4,11 @@ Multi-round Rocket.Chat collab — pure policy helpers.
 
 Contract (principal lock-in):
 - Grok is lead; one protocol for grok/hermes/agy/claude.
-- Shared rooms: tag-to-talk starts; return-notify on peer wake completion.
-- Return-notify target: assigner if assigner is a bot operator, else grok.
+- Shared rooms: tag-to-talk starts; return-notify on peer wake completion
+  **only when the trigger author is a bot operator** (lead/peer hop).
+- Direct principal→peer is solo: no return-notify (no false collab to grok).
+- Return-notify target: assigner if assigner is a bot operator, else grok
+  (target resolution only; emit still requires bot assigner).
 - After plain-language lead DONE, suppress automatic return-notify.
 - No hard hop-budget state machine; no required machine DONE footer.
 
@@ -211,6 +214,48 @@ def extract_mention_usernames(text: str | None) -> set[str]:
     if not text:
         return set()
     return {m.group(1).lower() for m in _MENTION_RE.finditer(text)}
+
+
+def extract_structured_mention_usernames(msg: Mapping[str, Any] | None) -> set[str]:
+    """Rocket.Chat structured mentions[] usernames (B1 enqueue residual)."""
+    out: set[str] = set()
+    if not msg:
+        return out
+    mentions = msg.get("mentions")
+    if not isinstance(mentions, list):
+        return out
+    for item in mentions:
+        if not isinstance(item, dict):
+            continue
+        uname = normalize_username(item.get("username") or item.get("name"))
+        if uname:
+            out.add(uname)
+    return out
+
+
+def extract_glued_mention_usernames(text: str | None) -> set[str]:
+    """Recover peers from glued forms like @grok@hermes (B1 residual)."""
+    if not text:
+        return set()
+    out: set[str] = set()
+    for run in re.finditer(r"(?:@([A-Za-z0-9._-]+))+", str(text)):
+        chunk = run.group(0)
+        out.update(m.lower() for m in re.findall(r"@([A-Za-z0-9._-]+)", chunk))
+    return out
+
+
+def extract_all_mention_usernames(
+    msg: Mapping[str, Any] | None = None,
+    text: str | None = None,
+) -> set[str]:
+    """Union of structured + text + glued-run mentions for lead-only gate."""
+    body = text if text is not None else ((msg or {}).get("msg") or "")
+    body_s = body if isinstance(body, str) else ""
+    return (
+        extract_structured_mention_usernames(msg)
+        | extract_mention_usernames(body_s)
+        | extract_glued_mention_usernames(body_s)
+    )
 
 
 def lead_done_language_present(text: str | None) -> bool:
@@ -435,6 +480,7 @@ def principal_multi_mention_lead_only(
     room_type: str | None,
     lead: str = GROK_LEAD,
     env: Mapping[str, str] | None = None,
+    msg: Mapping[str, Any] | None = None,
 ) -> bool:
     """
     When True, this operator must **not** enqueue despite being @mentioned.
@@ -443,6 +489,9 @@ def principal_multi_mention_lead_only(
     peers in one message → only the lead may wake; peers wait for lead assign.
     Direct principal→@peer (lead not mentioned) still wakes that peer.
     Peer-authored tags unchanged (returns False).
+
+    B1 residual: union structured mentions[] + text + glued runs (@grok@hermes)
+    so peers do not slip through while lead-only only saw text-regex lead.
     """
     if not multi_round_enabled(env):
         return False
@@ -456,7 +505,7 @@ def principal_multi_mention_lead_only(
     lead_u = normalize_username(lead) or GROK_LEAD
     if not op or op == lead_u:
         return False  # lead always may enqueue when tagged
-    mentions = extract_mention_usernames(text)
+    mentions = extract_all_mention_usernames(msg, text=text)
     if lead_u not in mentions:
         return False  # principal → single peer direct assign OK
     if not (mentions & PEER_OPERATORS):
@@ -476,6 +525,8 @@ def should_emit_return_notify(
     phase: str | None = None,
     rc: int | None = None,
     env: Mapping[str, str] | None = None,
+    room_id: str | None = None,
+    path: Path | None = None,
 ) -> bool:
     """
     Whether the completing process should post a return-notify @target message.
@@ -483,11 +534,17 @@ def should_emit_return_notify(
     - Multi-round enabled
     - Shared room (c/p)
     - Completing operator is a peer (not lead) — lead continues via @tags or DONE
+    - Trigger author (assigner) is a bot operator — lead or peer opened the hop
     - Lead has not declared DONE for this room
+    - When room_id is set: completing operator must be an assignee of the open epoch (B7)
     - Trigger must not itself be a collab-return ping (blocks peer↔peer ping-pong)
     - Skip if reply body already @mentions the resolved return target (avoid double ping)
     - Skip pure peer close-out / standing-by acks (anti-loop after DONE)
     - Skip empty / operator-error templates (open-collab quality gate)
+
+    Direct principal→peer (e.g. ``@hermes dig residuals`` with no lead hop) is a
+    **solo** task: do not return-notify @grok. Bug observed 2026-07-15 in
+    #Prime-Gap-Structure; fixed in runtime and mirrored here.
     """
     if not multi_round_enabled(env):
         return False
@@ -505,6 +562,24 @@ def should_emit_return_notify(
     # Only peers auto return-notify. Lead uses explicit @tags or declares done.
     if op == GROK_LEAD:
         return False
+    # Solo principal (or any non-bot) → peer: not multi-round collab.
+    assigner_u = normalize_username(assigner)
+    if not assigner_u or assigner_u not in ALL_OPERATORS:
+        return False
+    # B7 second belt: only assignees of an open epoch emit collab-return.
+    # Optional when room_id omitted (unit tests for earlier gates only).
+    if room_id:
+        st = load_shared_state(path=path, env=env)
+        entry = (st.get("rooms") or {}).get(str(room_id)) or {}
+        if entry.get("lead_done"):
+            return False
+        assignees = {
+            normalize_username(a)
+            for a in (entry.get("assignees") or [])
+            if normalize_username(a)
+        }
+        if op not in assignees:
+            return False
     # Peer "I'll stay silent / collaboration complete / standing by" must not
     # re-wake the lead (close-out loop). Open work still uses @peer tags or
     # non-closeout delivery bodies.
@@ -924,6 +999,16 @@ def record_assignee_delivered(
         rooms = st.setdefault("rooms", {})
         rid = str(room_id)
         entry = dict(rooms.get(rid) or {})
+        # B2 hard gate: do not stamp delivered after lead DONE or for non-assignees.
+        if entry.get("lead_done"):
+            return
+        assignees = {
+            normalize_username(a)
+            for a in (entry.get("assignees") or [])
+            if normalize_username(a)
+        }
+        if who not in assignees:
+            return
         delivered = dict(entry.get("delivered") or {})
         delivered[who] = {"mid": mid or "", "ts": ts}
         entry["delivered"] = delivered

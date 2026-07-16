@@ -237,6 +237,85 @@ def test_return_notify_unknown_assigner_targets_grok() -> None:
         )
 
 
+def test_principal_direct_peer_no_return_notify() -> None:
+    """Principal → @peer is solo; must not collab-return to grok (2026-07-15 bug)."""
+    try:
+        m = _load("rc_multi_round_collab", POLICY_WAKE / "rc_multi_round_collab.py")
+        env = {"RC_MULTI_ROUND_COLLAB": "1"}
+        body = (
+            "Your Mersenne generator lives under research/09-exponents as PGSMPG v0.1."
+        )
+        # Direct principal → hermes
+        assert (
+            m.should_emit_return_notify(
+                operator="hermes",
+                assigner="principal",
+                room_type="c",
+                lead_done=False,
+                reply_body=body,
+                trigger_text="@hermes Find my Mersenne prime generator and explain how it works",
+                env=env,
+            )
+            is False
+        )
+        # Missing / non-bot assigner
+        assert (
+            m.should_emit_return_notify(
+                operator="agy",
+                assigner=None,
+                room_type="p",
+                lead_done=False,
+                reply_body=body,
+                env=env,
+            )
+            is False
+        )
+        assert (
+            m.should_emit_return_notify(
+                operator="claude",
+                assigner="some-human",
+                room_type="c",
+                lead_done=False,
+                reply_body=body,
+                env=env,
+            )
+            is False
+        )
+        # Lead → peer collab hop still emits
+        assert (
+            m.should_emit_return_notify(
+                operator="hermes",
+                assigner="grok",
+                room_type="c",
+                lead_done=False,
+                reply_body=body,
+                trigger_text="@hermes dig residuals for the collab",
+                env=env,
+            )
+            is True
+        )
+        # Peer → peer hop still emits
+        assert (
+            m.should_emit_return_notify(
+                operator="agy",
+                assigner="hermes",
+                room_type="c",
+                lead_done=False,
+                reply_body=body,
+                trigger_text="@agy continue the residual table",
+                env=env,
+            )
+            is True
+        )
+        record("principal_direct_peer_no_return_notify", True)
+    except Exception as e:
+        record(
+            "principal_direct_peer_no_return_notify",
+            False,
+            repr(e) + traceback.format_exc(),
+        )
+
+
 # ---------------------------------------------------------------------------
 # (e) lead DONE suppresses return-notify
 # ---------------------------------------------------------------------------
@@ -852,6 +931,7 @@ def main() -> int:
         test_peer_tag_enqueues_target,
         test_return_notify_targets_assigner,
         test_return_notify_unknown_assigner_targets_grok,
+        test_principal_direct_peer_no_return_notify,
         test_lead_done_suppresses_return_notify,
         test_collab_return_trigger_does_not_emit_return_notify,
         test_shared_state_lead_done_roundtrip,
