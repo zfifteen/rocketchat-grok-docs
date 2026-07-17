@@ -63,7 +63,7 @@ S3 agy FINAL_ERR deep fix, S5 in-flight busy chrome, S6 double-seen, S8 B3/B10 l
 - Non-final update failures still call `note_429()` even when the failure is not HTTP 429 (over-backoff risk).
 - Some bubble post/finalize/ack paths still hardcode `COLLAB_GROK` while thought flush uses `op_identity`.
 - Dual S7 paths (early `validate_wake_cwd` vs older missing-cwd block) — keep until older block is removed.
-- Must set FINAL bucket to `default_shared_update_bucket()` (or `RC_UPDATE_BUCKET`) on all operators after copy/restart.
+- Shared bucket wire updated to `default_shared_update_bucket()` on the principal Mac; **restart operators** so processes reload the module + path.
 
 ## Env
 

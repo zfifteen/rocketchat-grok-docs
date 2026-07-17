@@ -108,6 +108,8 @@ Prior art already tracked: **IMP-21 B1–B10** (partial), **IMP-22** (denial ext
 
 ### S7 — Missing / invalid cwd must FINAL_ERR immediately (not exception)
 
+**Status:** Wave 1 implemented (`validate_wake_cwd` + `format_missing_cwd_err`); residual: remove older duplicate missing-cwd block in live agent.
+
 **Problem:** `process item failed … No such file or directory: …/math-research` (room pin to deleted path). stderr also shows operator start loops when RC down.
 
 **Do:**
@@ -176,6 +178,8 @@ Live sample: `ws_connected: true` but `last_event_at: null` while `last_wake_at`
 ---
 
 ### S14 — Cross-bot observability dashboard (lightweight)
+
+**Status:** Wave 1 implemented — `scripts/rc_wake_digest.py` filters ISO-timestamped lines by `--hours` (not whole-file tail).
 
 Five separate log dirs make “what just failed?” hard. Add `scripts/rc_wake_digest.py` → last 24h table: wakes, FINAL_ERR, 429, empty-reply, Cancelled, quality_gate suppress — print to stdout or Agency daily.
 
