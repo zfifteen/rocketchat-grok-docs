@@ -58,17 +58,56 @@ python3 ops/rocketchat/tests/test_wake_inflight_ux_s5.py  # 22/22
 
 ### S5 test execution record
 
+**Run:** 2026-07-17 (Hermes, TP rev2)  
+**Commands:**
+
+```bash
+python3 ops/rocketchat/tests/test_wake_inflight_ux_s5.py          # P 22/22
+python3 ops/rocketchat/tests/test_wake_ux_imp23.py                 # R0a 16/16
+python3 ops/rocketchat/tests/test_wake_denials_imp22.py            # R0b 6/6
+python3 ops/rocketchat/tests/test_multi_round_collab.py            # R0c 17/17
+python3 ops/rocketchat/scripts/rc_wake_digest.py --hours 6
+# live: import wake_inflight_ux; health.json; post-kickstart log greps
+```
+
 | Date | Agent | Layer | Result | Notes |
 | --- | --- | --- | --- | --- |
-| 2026-07-17 | hermes | P | PASS | 22/22 |
-| 2026-07-17 | hermes | R0a–c | PASS | 16/16, 6/6, 17/17 |
-| 2026-07-17 | hermes | I | partial | live import + ast parse; full mock harness not run |
-| 2026-07-17 | hermes | L | partial | kickstart all 5 ops; live log shows `enqueue busy_ack in-flight mid=…` on grok (A path live) |
+| 2026-07-17 | hermes | **P** | **PASS** | 22/22; no network imports in pure module |
+| 2026-07-17 | hermes | **R0a** | **PASS** | 16/16 `test_wake_ux_imp23.py` |
+| 2026-07-17 | hermes | **R0b** | **PASS** | 6/6 `test_wake_denials_imp22.py` |
+| 2026-07-17 | hermes | **R0c** | **PASS** | 17/17 `test_multi_round_collab.py` |
+| 2026-07-17 | hermes | **R1/R2** | SKIP | Optional agency usability not run |
+| 2026-07-17 | hermes | **I2/I3/I6/I8/I9b/I11/I12/I13** | **PASS** | Live module policy smoke + agent wire static checks (no full RC mock harness) |
+| 2026-07-17 | hermes | **I1/I4/I5/I7/I10** | SKIP | Need operator process harness / monkeypatch; waived for merge; pure covers policy |
+| 2026-07-17 | hermes | **L1** | PARTIAL | Operators healthy `ws=true` all 5; recent FINAL_OK in 6h; post-S5 drain wake observed (Agency mid=`iynFogbw…`) — full 👀 chrome not screenshot-verified |
+| 2026-07-17 | hermes | **L2** | **PASS** | Post-kickstart log: `enqueue busy_ack in-flight mid=iynFogbwPQkKLxZRf` (I2 primary + live) |
+| 2026-07-17 | hermes | **L3** | NOT RUN | No controlled second distinct mid while in-flight after S5 deploy |
+| 2026-07-17 | hermes | **L4** | RESIDUAL | `no_edit_stream` / not exercised; pure B/B2 still green |
+| 2026-07-17 | hermes | **L5** | PARTIAL | `RC_WAKE_MAX_CONCURRENT` default **16** (not forced to 1); no post-S5 DM-vs-channel timing experiment |
+| 2026-07-17 | hermes | **L6** | PARTIAL | Only 1 post-S5 busy_ack so far; pure P10 covers dedupe; historical pre-S5 `enqueue skip in-flight` still dominates older log tails |
+| 2026-07-17 | hermes | **L7** | PARTIAL | Digest 6h has residual 429s (pre-existing S1 class); S5 adapter path has no `update_message` (I6) |
+| 2026-07-17 | hermes | **L8** | NOT RUN | Peer-specific busy path not re-probed post-S5 (peers idle after kickstart) |
 
-### S5 residuals
+**Merge gate:** PASS (P + R0\*).  
+**Live wire safe:** PASS (module import, 5 operators `ws_connected=true`, busy_ack live).  
+**S5 Done gate:** NOT YET — hard L3 (+ ideally L1 full chrome, L5 timing) still open.
 
-- Live L1–L8 principal acceptance not yet recorded
-- RC may not redeliver message edits (L4 soft residual `no_edit_stream`)
+### Digest snapshot (6h, at test run)
+
+| bot | FINAL_OK | FINAL_ERR | 429 | empty-reply | Cancelled |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| grok | 8 | 0 | 12 | 0 | 0 |
+| hermes | 6 | 0 | 8 | 0 | 0 |
+| agy | 4 | 0 | 15 | 0 | 0 |
+| nie | 4 | 0 | 12 | 0 | 0 |
+| feynman | 4 | 0 | 19 | 0 | 0 |
+
+### S5 residuals (after test run)
+
+- Principal manual **L3** (new mid while busy → immediate 👀 + FIFO) still required for S5 Done
+- **L4** edit stream residual if RC never redelivers edits
+- **L5** cross-room timing experiment not run (config default 16 confirmed)
+- Full monkeypatch I-harness optional
 - Some process bubble post paths still hardcode `COLLAB_GROK` identity (pre-existing)
 
 ---

@@ -6,7 +6,7 @@
 | --- | --- |
 | **ID** | IMP-23-S5-TP |
 | **Package** | IMP-23 residual **S5** |
-| **Status** | Proposed (pre-implementation) |
+| **Status** | **Executed 2026-07-17** (merge gate PASS; S5 Done gate open — L3 not run) |
 | **TP revision** | **2** (2026-07-17) — aligned to impl plan rev2 |
 | **Primary code** | `ops/rocketchat/wake/wake_inflight_ux.py` (pure) · live `_enqueue_pending` / `_process_pending_item` / `_process_agy_collab_item` in `~/.grok/agency/ops/rocketchat/wake/rc_operator_agent.py` |
 | **Primary suite** | `ops/rocketchat/tests/test_wake_inflight_ux_s5.py` |
