@@ -13,11 +13,14 @@ This tree holds **reviewable copies** of the multi-round collab surface for PR r
 | `wake/rc_multi_round_collab.py` | Pure policy helpers (unit-testable) |
 | `wake/wake_denials.py` | IMP-22 tool-denial extract |
 | `wake/wake_ux_imp23.py` | IMP-23 S1/S2/S4/S7 pure helpers |
+| `wake/wake_inflight_ux.py` | IMP-23 S5 in-flight busy / follow-up / pending-update policy |
+| `wake/OPERATOR_INFLIGHT_HOOKS.md` | Live `rc_operator_agent` S5 wire excerpt |
 | `wake/RC_MULTI_ROUND_COLLAB_PLAYBOOK.md` | Injected playbook (v3) |
 | `wake/OPERATOR_MULTI_ROUND_HOOKS.md` | Excerpt of `rc_operator_agent.py` wiring |
 | `tests/test_multi_round_collab.py` | Unit suite (loads runtime `WAKE_DIR` by default) |
 | `tests/test_wake_denials_imp22.py` | IMP-22 pure tests |
-| `tests/test_wake_ux_imp23.py` | IMP-23 pure tests |
+| `tests/test_wake_ux_imp23.py` | IMP-23 Wave 1 pure tests |
+| `tests/test_wake_inflight_ux_s5.py` | IMP-23 S5 pure tests (22) |
 | `tests/test_wake_telemetry_b4_b5.py` | B4 StreamThrottle cool-down probes |
 | `tests/live_four_agent_collab_smoke.py` | Optional live smoke (`RC_LIVE_COLLAB_SMOKE=1`) |
 | `scripts/rc_wake_digest.py` | 24h multi-bot wake UX digest (S14) |
