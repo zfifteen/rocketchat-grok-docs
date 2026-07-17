@@ -11,7 +11,8 @@ This folder is the **backlog package**: each item has a requirements document an
 
 **Active interaction / wake UX packages:**  
 - [21 — Operator interaction bugs](21-operator-interaction-bugs-2026-07-15/) (B1–B10 multi-agent)  
-- [22 — Wake failure visibility](22-wake-failure-visibility/) (restricted tools → visible FINAL_ERR)
+- [22 — Wake failure visibility](22-wake-failure-visibility/) (restricted tools → visible FINAL_ERR)  
+- [23 — Wake UX log deep dive](23-wake-ux-log-deep-dive-2026-07-16/) (2026-07-16 production logs → S1–S14)
 
 ---
 
@@ -67,6 +68,7 @@ Each improvement folder links: **Index → Requirements ↔ Test plan**.
 | 20 | [PGS / bot auth via shared token surface](20-pgs-bot-token/) | Low | D | [req](20-pgs-bot-token/requirements.md) | [test](20-pgs-bot-token/test-plan.md) | **Done** |
 | 21 | [Operator interaction bugs (B1–B10)](21-operator-interaction-bugs-2026-07-15/) | High | A | [README](21-operator-interaction-bugs-2026-07-15/README.md) | specs in folder | **In progress** |
 | 22 | [Wake failure visibility & restricted-tool diagnostics](22-wake-failure-visibility/) | High | A/B | [req](22-wake-failure-visibility/requirements.md) | [test](22-wake-failure-visibility/test-plan.md) | **Implemented** (code+tests; restart ops to load) |
+| 23 | [Wake / response UX log deep dive → S1–S14](23-wake-ux-log-deep-dive-2026-07-16/) | High | A/B | [list](23-wake-ux-log-deep-dive-2026-07-16/suggested-improvements.md) | [evidence](23-wake-ux-log-deep-dive-2026-07-16/evidence.md) | **In progress** (Wave 1 S1/S2 + S4/S7/S14 code; see IMPLEMENTATION.md) |
 
 ---
 
