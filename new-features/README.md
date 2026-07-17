@@ -63,7 +63,7 @@ If layers disagree: **update the other layers to match the Spec**, or add an **e
 
 | # | Feature | Bundle | Layers | One-line intent |
 | --- | ---: | --- | --- | --- |
-| **1** | **True voice-in-RC Call** | [01-true-voice-in-rc-call/](./01-true-voice-in-rc-call/) | [research](./01-true-voice-in-rc-call/research.md) · [spec](./01-true-voice-in-rc-call/spec.md) · [test plan](./01-true-voice-in-rc-call/test-plan.md) · [impl plan](./01-true-voice-in-rc-call/implementation-plan.md) | Call button → LiveKit + Grok Voice Agent (not Playwright Path C) |
+| **1** | ~~**True voice-in-RC Call**~~ **RETIRED** | [01-true-voice-in-rc-call/](./01-true-voice-in-rc-call/) | Archive only | **WONTFIX 2026-07-17** — no voice/Call product; see `VOICE_RETIRED.md` |
 | **2** | **Streaming Thinking + telemetry** | [02-streaming-thinking-telemetry/](./02-streaming-thinking-telemetry/) | [research](./02-streaming-thinking-telemetry/research.md) · [spec](./02-streaming-thinking-telemetry/spec.md) · [test plan](./02-streaming-thinking-telemetry/test-plan.md) · [impl plan](./02-streaming-thinking-telemetry/implementation-plan.md) | One-bubble stream phases; structured `stopReason` failures |
 | **3** | **Phone control plane** | [03-phone-control-plane/](./03-phone-control-plane/) | [research](./03-phone-control-plane/research.md) · [spec](./03-phone-control-plane/spec.md) · [test plan](./03-phone-control-plane/test-plan.md) · [impl plan](./03-phone-control-plane/implementation-plan.md) | `/help` `/status` `/model` `/effort` `/goal` `/new` `/admin once` `/cancel` + elevation tokens |
 | **4** | **Antigravity (agy) collab via RC channel** | [04-agy-rocketchat-collab/](./04-agy-rocketchat-collab/) | [research](./04-agy-rocketchat-collab/research.md) · [spec](./04-agy-rocketchat-collab/spec.md) (NF-SPEC-04) · [test plan](./04-agy-rocketchat-collab/test-plan.md) (NF-TP-04) · [profiles](./04-agy-rocketchat-collab/profiles/) · *(IP deferred)* | Long-horizon Grok↔`agy` collab: dual accounts, @mention handoffs, many-turn durable sessions |
@@ -78,7 +78,7 @@ If layers disagree: **update the other layers to match the Spec**, or add an **e
 
 | # | Bundle README |
 | --- | --- |
-| 1 | [01-true-voice-in-rc-call/README.md](./01-true-voice-in-rc-call/README.md) |
+| 1 | [01-true-voice-in-rc-call/README.md](./01-true-voice-in-rc-call/README.md) **RETIRED** |
 | 2 | [02-streaming-thinking-telemetry/README.md](./02-streaming-thinking-telemetry/README.md) |
 | 3 | [03-phone-control-plane/README.md](./03-phone-control-plane/README.md) |
 | 4 | [04-agy-rocketchat-collab/README.md](./04-agy-rocketchat-collab/README.md) |
@@ -109,7 +109,7 @@ If layers disagree: **update the other layers to match the Spec**, or add an **e
 
 ### Live stack facts (keep docs aligned)
 
-- Path C (Playwright + `voice_room`) is **deployed MVP**, **not** the production media target — see `docs/architecture.md` Path D / Feature 1.  
+- **Voice/Call RETIRED (2026-07-17):** no Call product; Path C/D archive only. See `~/.grok/agency/ops/rocketchat/VOICE_RETIRED.md`.  
 - Restricted wake CLI: `--permission-mode auto` (`wake_lib` + `ops/ROCKETCHAT.md`); `acceptEdits` is **historical failure mode** only.  
 - Single-bubble answers: Thinking… → reply file → `chat.update` only (`NO_DUPLICATE_POSTS.md`).
 

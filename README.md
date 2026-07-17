@@ -21,18 +21,16 @@ so the stack stays navigable.
 
 1. **[Filesystem map](docs/filesystem-map.md)** — where everything is  
 2. **[Architecture](docs/architecture.md)** — components and responsibilities  
-3. **[Message flow](docs/message-flow.md)** — DM / channel / voice / call paths  
+3. **[Message flow](docs/message-flow.md)** — DM / channel paths (Call/voice **retired**)  
 4. **[Operations](docs/operations.md)** — status, restart, tests, common fixes  
 5. **[Related systems](docs/related-systems.md)** — agency spine, PGS hourly notify, Twilio  
 6. **[Multi-agent integration guide](docs/agent-integration-guide.md)** — **for other agents:** create RC user, secrets, parallel operator, tag-to-talk, launchd, verify  
 6a. **[Multi-round collab](docs/multi-round-collab.md)** — Grok lead, return-notify, principal open = `@grok` only, quality-gated hops (issue [#2](https://github.com/zfifteen/rocketchat-grok-docs/issues/2); mirror [`ops/rocketchat/`](ops/rocketchat/))  
 7. **[Improvements backlog](docs/improvements/INDEX.md)** — ranked suggestions; each has requirements + test plan  
-8. **[Code review findings (2026-07-14)](docs/reviews/2026-07-14-rc-integration-heavy-review.md)** — Heavy review backlog (crash safety, media, voice auth, docs drift); address later  
+8. **[Code review findings (2026-07-14)](docs/reviews/2026-07-14-rc-integration-heavy-review.md)** — Heavy review backlog (crash safety, media, **C1 voice retired 2026-07-17**, docs drift)  
 9. **[Goal: install refactor → public share](docs/goals/install-refactor-then-public-share.md)** — **parked program** (local config first, package later; not started)  
-10. **[Voice call implementation plan](docs/implementation-plan-voice-calls.md)** — Path C fix framing (historical / lab)  
-11. **[Voice/media research path](docs/research-voice-media-path.md)** — **recommended** architecture (RC Call → SFU/agent → Grok Voice)  
-12. **[Preflight voice test protocol](docs/preflight-voice-test-protocol.md)** — test **before** principal Call (T0–T2 agent-run; T5 you)  
-13. **[New features index](new-features/README.md)** — one numbered subfolder per product feature (related docs co-located): **[01 voice Call](new-features/01-true-voice-in-rc-call/)**, **[02 streaming Thinking](new-features/02-streaming-thinking-telemetry/)**, **[03 phone control plane](new-features/03-phone-control-plane/)**, **[04 agy collab](new-features/04-agy-rocketchat-collab/)**, **[10 lead–peer full collab](new-features/10-lead-peer-full-collab/)** (**NF-SPEC-10**), **[05 reading attachments](new-features/05-reading-attachments/)**; docs only
+10. ~~Voice call plans~~ — **retired**; historical only: [implementation-plan-voice-calls.md](docs/implementation-plan-voice-calls.md), [research-voice-media-path.md](docs/research-voice-media-path.md)  
+11. **[New features index](new-features/README.md)** — **01 voice Call = RETIRED**; active product features start at **02+** (streaming, control plane, collab, attachments, …)
 
 ---
 

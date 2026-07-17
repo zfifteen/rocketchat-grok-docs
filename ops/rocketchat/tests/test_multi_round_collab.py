@@ -93,7 +93,7 @@ def test_untagged_channel_no_enqueue() -> None:
             "msg": "team please continue the research without tags",
             "u": {"username": "principal"},
         }
-        for op in ("grok", "hermes", "agy", "claude"):
+        for op in ("grok", "hermes", "agy"):
             assert (
                 wl.should_enqueue_llm_wake(
                     msg, operator=op, room_type="c", env=env
@@ -154,13 +154,13 @@ def test_peer_tag_enqueues_target() -> None:
         )  # self never; author is grok tagging hermes
         # text-only mention without structured mentions[]
         msg_txt = {
-            "_id": "m-tag-claude",
-            "msg": "please @claude pressure-test falsifiability",
+            "_id": "m-tag-agy",
+            "msg": "please @agy pressure-test falsifiability",
             "u": {"username": "grok"},
         }
         assert (
             wl.should_enqueue_llm_wake(
-                msg_txt, operator="claude", room_type="p", env=env
+                msg_txt, operator="agy", room_type="p", env=env
             )
             is True
         )
@@ -178,9 +178,9 @@ def test_return_notify_targets_assigner() -> None:
     try:
         m = _load("rc_multi_round_collab", POLICY_WAKE / "rc_multi_round_collab.py")
         t = m.resolve_return_notify_target(
-            "claude", completing_operator="hermes"
+            "agy", completing_operator="hermes"
         )
-        assert t == "claude", t
+        assert t == "agy", t
         t2 = m.resolve_return_notify_target(
             "grok", completing_operator="agy"
         )
@@ -219,7 +219,7 @@ def test_return_notify_unknown_assigner_targets_grok() -> None:
     try:
         m = _load("rc_multi_round_collab", POLICY_WAKE / "rc_multi_round_collab.py")
         assert m.resolve_return_notify_target(None, completing_operator="agy") == "grok"
-        assert m.resolve_return_notify_target("", completing_operator="claude") == "grok"
+        assert m.resolve_return_notify_target("", completing_operator="hermes") == "grok"
         assert (
             m.resolve_return_notify_target("principal", completing_operator="hermes")
             == "grok"
@@ -272,7 +272,7 @@ def test_principal_direct_peer_no_return_notify() -> None:
         )
         assert (
             m.should_emit_return_notify(
-                operator="claude",
+                operator="agy",
                 assigner="some-human",
                 room_type="c",
                 lead_done=False,
@@ -526,6 +526,31 @@ def test_shared_state_lead_done_roundtrip() -> None:
 def test_skip_return_notify_when_reply_already_tags_target() -> None:
     try:
         m = _load("rc_multi_round_collab", POLICY_WAKE / "rc_multi_round_collab.py")
+        # Line-start intentional @grok already wakes lead under B10 → no return-notify.
+        assert (
+            m.should_emit_return_notify(
+                operator="agy",
+                assigner="grok",
+                room_type="c",
+                lead_done=False,
+                reply_body="@grok synthesis ready when you are.\n",
+                env={"RC_MULTI_ROUND_COLLAB": "1"},
+            )
+            is False
+        )
+        # Soft FOR: @grok footer is intentional handoff (wake-capable) → no double ping.
+        assert (
+            m.should_emit_return_notify(
+                operator="hermes",
+                assigner="grok",
+                room_type="c",
+                lead_done=False,
+                reply_body="Delivery complete.\n\nSTATUS: done\nFOR: @grok\n",
+                env={"RC_MULTI_ROUND_COLLAB": "1"},
+            )
+            is False
+        )
+        # Mid-sentence prose @grok does NOT wake under B10 → still need return-notify.
         assert (
             m.should_emit_return_notify(
                 operator="agy",
@@ -535,7 +560,7 @@ def test_skip_return_notify_when_reply_already_tags_target() -> None:
                 reply_body="Done. @grok synthesis ready when you are.",
                 env={"RC_MULTI_ROUND_COLLAB": "1"},
             )
-            is False
+            is True
         )
         record("skip_return_notify_when_reply_already_tags_target", True)
     except Exception as e:
@@ -582,7 +607,6 @@ def test_playbook_wired_all_four_reply_surfaces() -> None:
                 "reply_prompt.txt",
                 "hermes_reply_prompt.txt",
                 "agy_reply_prompt.txt",
-                "claude_reply_prompt.txt",
             ):
                 p = RUNTIME_WAKE / name
                 assert p.is_file(), name
@@ -635,10 +659,10 @@ def test_principal_multi_mention_lead_only() -> None:
         m = _load("rc_multi_round_collab", POLICY_WAKE / "rc_multi_round_collab.py")
         env = {"RC_MULTI_ROUND_COLLAB": "1", "RC_MULTI_ROUND_PRINCIPAL_LEAD_ONLY": "1"}
         multi = (
-            "@grok @hermes @agy @claude four-agent collab: each report readiness"
+            "@grok @hermes @agy three-agent collab: each report readiness"
         )
         # Peers must skip when principal multi-@ includes lead
-        for peer in ("hermes", "agy", "claude"):
+        for peer in ("hermes", "agy"):
             assert (
                 m.principal_multi_mention_lead_only(
                     author="principal",
@@ -728,12 +752,12 @@ def test_quality_gate_empty_failure_no_return_notify() -> None:
         for body in empty_templates:
             assert (
                 m.should_emit_return_notify(
-                    operator="claude",
+                    operator="agy",
                     assigner="grok",
                     room_type="c",
                     lead_done=False,
                     reply_body=body,
-                    trigger_text="@claude pressure-test falsifiability",
+                    trigger_text="@agy pressure-test falsifiability",
                     phase="FINAL_ERR",
                     rc=1,
                     env=env,
@@ -743,7 +767,7 @@ def test_quality_gate_empty_failure_no_return_notify() -> None:
         # Useful delivery still emits
         assert (
             m.should_emit_return_notify(
-                operator="claude",
+                operator="agy",
                 assigner="grok",
                 room_type="c",
                 lead_done=False,
@@ -751,7 +775,7 @@ def test_quality_gate_empty_failure_no_return_notify() -> None:
                     "Falsifiability pressure-test complete. "
                     "Three residual claims remain open; see checklist."
                 ),
-                trigger_text="@claude pressure-test falsifiability",
+                trigger_text="@agy pressure-test falsifiability",
                 phase="FINAL",
                 rc=0,
                 env=env,
@@ -782,7 +806,7 @@ def test_epoch_lifecycle_and_footer() -> None:
             rid = "room-epoch-1"
             ep = m.open_collab_epoch(
                 rid,
-                assignees=["hermes", "agy", "claude"],
+                assignees=["hermes", "agy"],
                 opened_by="grok",
                 mid="kickoff-1",
                 path=path,
@@ -901,7 +925,7 @@ def test_shared_state_rmw_atomic_concurrent() -> None:
             # Reuse epoch without wipe
             ep1 = m.room_epoch(rid, path=path)
             ep2 = m.open_collab_epoch(
-                rid, assignees=["claude"], opened_by="grok", path=path
+                rid, assignees=["agy"], opened_by="grok", path=path
             )
             assert ep2 == ep1
             assert m.assignee_already_delivered(rid, "hermes", path=path)

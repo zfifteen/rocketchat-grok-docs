@@ -1,12 +1,21 @@
-# Feature 01 — True voice-in-RC Call (media-plane rewrite)
+# Feature 01 — True voice-in-RC Call
 
-**Bundle home:** `new-features/01-true-voice-in-rc-call/`  
-**Status:** Documentation only (no runtime implementation in this package)  
-**Parent index:** [`../README.md`](../README.md)
+**Status: RETIRED / WONTFIX — 2026-07-17**  
+**Not on the product roadmap.**
 
-Call button → LiveKit + Grok Voice Agent (not Playwright Path C)
+Principal decision: no voice/Call integration feature. Runtime hard gates:
 
-## Documents in this bundle
+- `RC_CALL_ENABLED` default **off**
+- `RC_PUBLIC_VOICE` default **off**
+- VideoConf settings disabled
+- `voice_room` launchd disabled
+
+Canonical policy: `~/.grok/agency/ops/rocketchat/VOICE_RETIRED.md`
+
+The documents below remain as **historical archive** only (research / rejected design).  
+Do **not** implement NF-IP-01 or schedule Call work without reinstating this feature in the index with principal approval.
+
+## Documents in this bundle (archive)
 
 | Layer | File | ID |
 | --- | --- | --- |
@@ -15,15 +24,8 @@ Call button → LiveKit + Grok Voice Agent (not Playwright Path C)
 | **Test plan** | [test-plan.md](./test-plan.md) | NF-TP-01 |
 | **Implementation plan** | [implementation-plan.md](./implementation-plan.md) | NF-IP-01 |
 
-## Suggested reading order
-
-1. [research.md](./research.md) — why / options / recommendation  
-2. [spec.md](./spec.md) — normative shalls and architecture  
-3. [test-plan.md](./test-plan.md) — how to prove it  
-4. [implementation-plan.md](./implementation-plan.md) — how to build, flag, and roll back  
-
 ## Related
 
-- Live system: [`../../docs/architecture.md`](../../docs/architecture.md), [`../../docs/message-flow.md`](../../docs/message-flow.md)  
-- Runtime runbook: `~/.grok/agency/ops/ROCKETCHAT.md`  
+- Live system: text/operator only — [`../../docs/architecture.md`](../../docs/architecture.md)  
+- Runtime: `~/.grok/agency/ops/ROCKETCHAT.md`  
 - All features: [`../README.md`](../README.md)

@@ -3,7 +3,7 @@
 Multi-round Rocket.Chat collab — pure policy helpers.
 
 Contract (principal lock-in):
-- Grok is lead; one protocol for grok/hermes/agy/claude.
+- Grok is lead; one protocol for grok/hermes/feynman/nie/agy (claude RC operator removed 2026-07-16).
 - Shared rooms: tag-to-talk starts; return-notify on peer wake completion
   **only when the trigger author is a bot operator** (lead/peer hop).
 - Direct principal→peer is solo: no return-notify (no false collab to grok).
@@ -28,8 +28,8 @@ from typing import Any, Mapping
 
 GROK_LEAD = "grok"
 PRINCIPAL = "principal"  # default username; override via RC_PRINCIPAL_USERNAME
-ALL_OPERATORS = frozenset({"grok", "hermes", "agy", "claude"})
-PEER_OPERATORS = frozenset({"hermes", "agy", "claude"})
+ALL_OPERATORS = frozenset({"grok", "hermes", "feynman", "nie", "agy"})
+PEER_OPERATORS = frozenset({"hermes", "feynman", "nie", "agy"})
 
 # Posted by the operator after a peer collab wake completes (wakes assigner|lead).
 COLLAB_RETURN_MARKER = "collab-return"
@@ -216,6 +216,51 @@ def extract_mention_usernames(text: str | None) -> set[str]:
     return {m.group(1).lower() for m in _MENTION_RE.finditer(text)}
 
 
+def intentional_handoff_mentions(text: str | None) -> set[str]:
+    """@ops that wake a bot author under B10-style intentional shapes.
+
+    Includes:
+    - line-start ``@op`` (optional light markdown wrappers)
+    - ``FOR: @op`` soft delivery footer (playbook tooling line)
+    - ``@op`` + assign verb
+    - operator collab-return template targets
+
+    Mid-sentence prose ``@op`` is **not** included — those do not wake under B10,
+    so return-notify must still fire.
+    """
+    if not text:
+        return set()
+    found: set[str] = set()
+    body = str(text)
+    for line in body.splitlines():
+        m = re.match(
+            r"^\s*(?:\*{1,2}|_{1,2}|`)*@([A-Za-z0-9._-]+)\b",
+            line,
+        )
+        if m:
+            found.add(m.group(1).lower())
+        m_for = re.match(
+            r"^\s*FOR:\s*@([A-Za-z0-9._-]+)\b",
+            line,
+            re.I,
+        )
+        if m_for:
+            found.add(m_for.group(1).lower())
+    # Assign-verb forms anywhere (match wake_lib B10).
+    for m in re.finditer(
+        r"@([A-Za-z0-9._-]+)\s+(?:please\s+)?(?:"
+        r"dig|own|fix|trace|run|do|check|write|propose|add|test|handle|"
+        r"implement|review|pressure-test|take|cover|look|investigate|"
+        r"deliver|spec|patch|report|verify|synthesize|merge)\b",
+        body,
+        re.I,
+    ):
+        found.add(m.group(1).lower())
+    for m in _COLLAB_RETURN_TEMPLATE_RE.finditer(body):
+        found.add(m.group(1).lower())
+    return found
+
+
 def extract_structured_mention_usernames(msg: Mapping[str, Any] | None) -> set[str]:
     """Rocket.Chat structured mentions[] usernames (B1 enqueue residual)."""
     out: set[str] = set()
@@ -272,7 +317,7 @@ def lead_done_language_present(text: str | None) -> bool:
 # Open assign language: peer tag is a real handoff, not a close-out "Copy @agy".
 _OPEN_ASSIGN_RES: tuple[re.Pattern[str], ...] = (
     re.compile(
-        r"@(?:hermes|agy|claude)\b[\s\S]{0,80}\b("
+        r"@(?:hermes|feynman|nie|agy)\b[\s\S]{0,80}\b("
         r"please|dig|continue|task|assign|check|run|write|fix|retry|expand|falsify"
         r")\b",
         re.I,
@@ -280,7 +325,7 @@ _OPEN_ASSIGN_RES: tuple[re.Pattern[str], ...] = (
     re.compile(
         r"\b("
         r"please|dig|continue|your task|next steps?|re-?assign"
-        r")\b[\s\S]{0,80}@(?:hermes|agy|claude)\b",
+        r")\b[\s\S]{0,80}@(?:hermes|feynman|nie|agy)\b",
         re.I,
     ),
 )
@@ -592,8 +637,13 @@ def should_emit_return_notify(
     )
     if target == op:
         return False
-    # If the peer already @mentioned the return target in the user-facing reply, skip.
-    if reply_body and target in extract_mention_usernames(reply_body):
+    # Skip return-notify only when the peer used a *wake-capable* intentional
+    # handoff to the target (line-start @op, assign-verb, collab-return, or
+    # FOR: @op footer). Soft mid-sentence "@grok" or prose does NOT wake under
+    # B10, so we must still emit return-notify in that case.
+    # Bug 2026-07-17 math-research: FOR: @grok suppressed return-notify while
+    # B10 treated FOR: as non-intentional → lead never woke.
+    if reply_body and target in intentional_handoff_mentions(reply_body):
         return False
     return True
 
