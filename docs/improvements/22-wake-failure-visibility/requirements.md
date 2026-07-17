@@ -7,7 +7,7 @@
 | **ID** | IMP-22 |
 | **Priority** | High |
 | **Phase** | A / B (safety + ops truth) |
-| **Status** | Proposed |
+| **Status** | Implemented (2026-07-16) — see [IMPLEMENTATION.md](./IMPLEMENTATION.md) |
 | **Related** | IMP-01 (approval), IMP-09 (turn limits), improvement 21 (B3–B5 interaction), NF-SPEC-02 FINAL_ERR |
 
 ---
