@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grok Voice Room</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f1115; color: #e8eaed; margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
+    #status { opacity: 0.85; font-size: 0.95rem; margin-bottom: 1rem; }
+    #remoteAudio { width: 0; height: 0; }
+    .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 999px; background: #1f6feb33; border: 1px solid #1f6feb; margin-top: 0.75rem; font-size: 0.8rem; }
+    .err { color: #ff8a80; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Voice room</h1>
+  <div id="status">Connecting…</div>
+  <div class="badge" id="roomBadge"></div>
+  <audio id="remoteAudio" autoplay playsinline></audio>
+  <script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const pathRoom = decodeURIComponent((location.pathname.replace(/^\//, '').split('/')[0] || '').trim());
+  const room = params.get('room') || pathRoom || 'default';
+  const displayName = params.get('name') || params.get('userInfo.displayName') || 'Guest';
+  document.getElementById('roomBadge').textContent = room;
+  document.getElementById('title').textContent = 'Room ' + room;
+  const statusEl = document.getElementById('status');
+  const setStatus = (t, isErr) => {
+    statusEl.textContent = t;
+    statusEl.className = isErr ? 'err' : '';
+  };
+
+  const iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+  /** @type {Map<string, RTCPeerConnection>} */
+  const pcs = new Map();
+  /** @type {MediaStream|null} */
+  let localStream = null;
+  let selfId = null;
+  let ws = null;
+
+  const remoteAudio = document.getElementById('remoteAudio');
+  const remoteMix = new MediaStream();
+  remoteAudio.srcObject = remoteMix;
+
+  // Probe hooks used by preflight / call bot (top-level window)
+  window.__voiceRoom = {
+    room,
+    displayName,
+    remoteTrackCount: 0,
+    localReady: false,
+    secureContext: !!(window.isSecureContext),
+    hasMediaDevices: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+    peers: () => [...pcs.keys()],
+  };
+
+  function mediaAccessBlockedReason() {
+    // iOS / Safari: http://LAN-IP is not a secure context → mediaDevices is undefined
+    if (!window.isSecureContext) {
+      return (
+        'This page is not a secure context (need HTTPS, not plain http://LAN). ' +
+        'navigator.mediaDevices is unavailable — microphone cannot start. ' +
+        'location=' + location.origin
+      );
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return 'navigator.mediaDevices.getUserMedia is missing (secure context or permissions).';
+    }
+    return null;
+  }
+
+  async function ensureLocal() {
+    if (localStream) return localStream;
+    const blocked = mediaAccessBlockedReason();
+    if (blocked) {
+      window.__voiceRoom.localReady = false;
+      window.__voiceRoom.mediaError = blocked;
+      throw new Error(blocked);
+    }
+    // Prefer existing getUserMedia (may be overridden by inject scripts)
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      video: false,
+    });
+    window.__voiceRoom.localReady = true;
+    window.__voiceRoom.localTracks = localStream.getAudioTracks().map((t) => ({
+      id: t.id, enabled: t.enabled, muted: t.muted, ready: t.readyState, label: t.label,
+    }));
+    return localStream;
+  }
+
+  function wsUrl() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return proto + '//' + location.host + '/ws?room=' + encodeURIComponent(room) + '&name=' + encodeURIComponent(displayName);
+  }
+
+  function send(obj) {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+  }
+
+  async function createPc(peerId) {
+    if (pcs.has(peerId)) return pcs.get(peerId);
+    const pc = new RTCPeerConnection({ iceServers });
+    pcs.set(peerId, pc);
+    const stream = await ensureLocal();
+    stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+    pc.onicecandidate = (ev) => {
+      if (ev.candidate) {
+        send({ type: 'signal', to: peerId, data: { kind: 'ice', candidate: ev.candidate } });
+      }
+    };
+    pc.ontrack = (ev) => {
+      const track = ev.track;
+      if (!track || track.kind !== 'audio') return;
+      if (track.__vr) return;
+      track.__vr = true;
+      remoteMix.addTrack(track);
+      window.__voiceRoom.remoteTrackCount = remoteMix.getAudioTracks().length;
+      setStatus('Connected — audio live (' + window.__voiceRoom.remoteTrackCount + ' remote track(s))');
+      remoteAudio.play().catch(() => {});
+    };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        pc.close();
+        pcs.delete(peerId);
+      }
+    };
+    return pc;
+  }
+
+  async function offerTo(peerId) {
+    const pc = await createPc(peerId);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    send({ type: 'signal', to: peerId, data: { kind: 'sdp', sdp: pc.localDescription } });
+  }
+
+  async function handleSignal(from, data) {
+    const pc = await createPc(from);
+    if (data.kind === 'sdp') {
+      const desc = data.sdp;
+      if (desc.type === 'offer') {
+        await pc.setRemoteDescription(desc);
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        send({ type: 'signal', to: from, data: { kind: 'sdp', sdp: pc.localDescription } });
+      } else if (desc.type === 'answer') {
+        if (pc.signalingState === 'have-local-offer') {
+          await pc.setRemoteDescription(desc);
+        }
+      }
+    } else if (data.kind === 'ice' && data.candidate) {
+      try {
+        await pc.addIceCandidate(data.candidate);
+      } catch (e) {
+        console.warn('ice', e);
+      }
+    }
+  }
+
+  async function start() {
+    try {
+      await ensureLocal();
+    } catch (e) {
+      setStatus('Microphone error: ' + e, true);
+      return;
+    }
+    ws = new WebSocket(wsUrl());
+    ws.onopen = () => setStatus('Joined signaling — waiting for peer…');
+    ws.onerror = () => setStatus('WebSocket error', true);
+    ws.onclose = () => setStatus('Signaling disconnected', true);
+    ws.onmessage = async (ev) => {
+      let msg;
+      try { msg = JSON.parse(ev.data); } catch { return; }
+      if (msg.type === 'welcome') {
+        selfId = msg.id;
+        window.__voiceRoom.selfId = selfId;
+        setStatus('In room as ' + displayName + ' — waiting for peer…');
+        // Existing peers will send us offers (they see peer-join). Just wait.
+      } else if (msg.type === 'peer-join') {
+        // We were already in the room; offer to the newcomer.
+        setStatus('Peer joined — negotiating…');
+        await offerTo(msg.id);
+      } else if (msg.type === 'peer-leave') {
+        const pc = pcs.get(msg.id);
+        if (pc) { pc.close(); pcs.delete(msg.id); }
+        setStatus('Peer left');
+      } else if (msg.type === 'signal' && msg.from && msg.data) {
+        await handleSignal(msg.from, msg.data);
+      }
+    };
+  }
+
+  // Preflight helpers
+  window.__probeDiag = () => ({
+    remoteCount: window.__voiceRoom.remoteTrackCount || 0,
+    localReady: window.__voiceRoom.localReady,
+    peers: window.__voiceRoom.peers(),
+    room,
+  });
+  window.__probeRecord = async (sec) => {
+    const stream = remoteMix;
+    if (!stream.getAudioTracks().length) {
+      return { ok: false, reason: 'no_remote_tracks', count: stream.getAudioTracks().length };
+    }
+    let mime = 'audio/webm';
+    if (!MediaRecorder.isTypeSupported(mime)) mime = '';
+    const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const done = new Promise((r) => { rec.onstop = () => r(chunks); });
+    rec.start(100);
+    await new Promise((r) => setTimeout(r, Math.floor(sec * 1000)));
+    rec.stop();
+    const parts = await done;
+    if (!parts.length) return { ok: false, reason: 'empty_chunks', count: stream.getAudioTracks().length };
+    const blob = new Blob(parts, { type: mime || 'audio/webm' });
+    const ab = await blob.arrayBuffer();
+    const bytes = new Uint8Array(ab);
+    let s = '';
+    for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return { ok: true, b64: btoa(s), bytes: bytes.length, count: stream.getAudioTracks().length };
+  };
+
+  start();
+})();
+  </script>
+</body>
+</html>

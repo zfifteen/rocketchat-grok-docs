@@ -76,17 +76,20 @@ CLI  (--cwd agency or ~/IdeaProjects/<channel>)
 
 | Kind of thing | Typical home | Why this home |
 | --- | --- | --- |
-| Integration code | `~/.grok/agency/ops/rocketchat/` | Built as agency ops, next to continuity |
+| Integration code (**live**) | `~/.grok/agency/ops/rocketchat/` | launchd cwd, state, venv next to continuity |
+| Integration code (**git mirror**, Option 1) | [`ops/rocketchat/`](ops/rocketchat/) in this repo | PR review; deploy via `scripts/deploy-mirror-to-live.sh` |
 | Continuity / mandate | `~/.grok/agency/` | Source of truth for the agency program |
 | Secrets | `~/.grok/agency/secrets/` | Mode 600; kept out of git |
 | Always-on jobs | `~/Library/LaunchAgents/` | macOS launchd requirement |
 | Logs / ledgers | `~/logs/rocketchat-dm-wake/` | Long-running process I/O |
 | Channel workspaces | `~/IdeaProjects/<slug>/` | Grok works *in* project dirs |
-| This documentation | `~/IdeaProjects/rocketchat-grok-docs/` | Stable map; runtime stays in place |
+| This documentation | `~/IdeaProjects/rocketchat-grok-docs/` | Stable map; live runtime stays under agency |
 
-A future refactor could move **code** into an IdeaProjects app repo. Secrets,
-launchd, logs, Docker volumes, and agency state would remain in their current
-homes. See [architecture notes on layout](docs/architecture.md#layout-rationale).
+**Option 1 (current):** expand the reviewable mirror under `ops/rocketchat/` (code/examples/templates). Live remains agency; sync scripts never copy secrets/state/venv.  
+**Option 2 (later decision):** git becomes canonical; deploy only to live.  
+**Option 3 (run from repo):** off the table.
+
+Secrets, launchd installs, logs, Docker volumes, and operator state stay out of git.
 
 ---
 
@@ -95,7 +98,8 @@ homes. See [architecture notes on layout](docs/architecture.md#layout-rationale)
 | Need | Path |
 | --- | --- |
 | Ops runbook | `~/.grok/agency/ops/ROCKETCHAT.md` |
-| Compose + code root | `~/.grok/agency/ops/rocketchat/` |
+| Compose + code root (live) | `~/.grok/agency/ops/rocketchat/` |
+| Compose + code **mirror** | [`ops/rocketchat/`](ops/rocketchat/) |
 | Operator agent | `…/rocketchat/wake/rc_operator_agent.py` |
 | Shared lib | `…/rocketchat/wake/wake_lib.py` |
 | Secrets | `~/.grok/agency/secrets/rocketchat.env` |

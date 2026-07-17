@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- IMP-11: rendered by install-launchd.sh — placeholders @HOME@ @PYTHON_BIN@ @GROK_BIN@ @ROOT@ -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.velocityworks.rocketchat-operator</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>@ROOT@/wake/run_operator_agent.sh</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>@HOME@/logs/rocketchat-dm-wake/operator-launchd.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>@HOME@/logs/rocketchat-dm-wake/operator-launchd.stderr.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>@HOME@</string>
+        <key>PATH</key>
+        <string>@HOME@/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>GROK_BIN</key>
+        <string>@GROK_BIN@</string>
+        <key>PYTHON_BIN</key>
+        <string>@PYTHON_BIN@</string>
+        <key>RC_WAKE_APPROVAL_MODE</key>
+        <string>admin</string>
+        <key>RC_WAKE_ADMIN_DMS_ONLY</key>
+        <string>0</string>
+        <key>RC_WAKE_MAX_TURNS</key>
+        <string>100</string>
+        <key>RC_AUTO_CREATE_PROJECTS</key>
+        <string>1</string>
+        <key>RC_WAKE_TIMEOUT_S</key>
+        <string>600</string>
+        <key>RC_WAKE_LOCK_STALE_S</key>
+        <string>900</string>
+        <key>RC_REQUIRE_MENTION</key>
+        <string>1</string>
+        <key>RC_REQUIRE_MENTION_SCOPE</key>
+        <string>channels</string>
+    </dict>
+</dict>
+</plist>

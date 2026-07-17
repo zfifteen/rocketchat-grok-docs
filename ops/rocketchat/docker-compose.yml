@@ -1,0 +1,99 @@
+# Local Rocket.Chat for agency road messaging (Phase 1 — localhost only)
+# Usage: docker compose up -d
+# Docs: ../ROCKETCHAT.md
+
+name: agency-rocketchat
+
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:7.0-ubi8
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+    command: >-
+      mongod --replSet rs0 --bind_ip_all --oplogSize 128
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  mongodb-init:
+    image: mongodb/mongodb-community-server:7.0-ubi8
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: >
+      bash -c '
+        set -e
+        echo "=====> Initiating replica set rs0 if needed..."
+        mongosh --host mongodb:27017 --quiet --eval "
+          try {
+            const s = rs.status();
+            print(\"replica set already configured: \" + s.set);
+          } catch (e) {
+            rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongodb:27017\"}]});
+            print(\"replica set initiated\");
+          }
+        "
+        # Wait until primary is elected
+        for i in $$(seq 1 30); do
+          if mongosh --host mongodb:27017 --quiet --eval "rs.isMaster().ismaster" | grep -q true; then
+            echo "=====> MongoDB primary ready"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "=====> Timed out waiting for primary"
+        exit 1
+      '
+
+  rocketchat:
+    image: registry.rocket.chat/rocketchat/rocket.chat:8.6.0
+    restart: unless-stopped
+    depends_on:
+      mongodb-init:
+        condition: service_completed_successfully
+    environment:
+      ROOT_URL: ${ROOT_URL:-http://localhost:3000}
+      PORT: "3000"
+      MONGO_URL: mongodb://mongodb:27017/rocketchat?replicaSet=rs0
+      MONGO_OPLOG_URL: mongodb://mongodb:27017/local?replicaSet=rs0
+      DEPLOY_METHOD: docker
+      DEPLOY_PLATFORM: compose
+      # First-run admin (principal). Only applied when DB is empty.
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-principal}
+      ADMIN_PASS: ${ADMIN_PASS:?set ADMIN_PASS in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-principal@localhost.local}
+      OVERWRITE_SETTING_Show_Setup_Wizard: completed
+      OVERWRITE_SETTING_Accounts_TwoFactorAuthentication_Enabled: "false"
+      OVERWRITE_SETTING_Accounts_RegistrationForm: Disabled
+      # Public URL for mobile apps / websockets (must match ngrok HTTPS)
+      OVERWRITE_SETTING_Site_Url: ${ROOT_URL:-http://localhost:3000}
+      # Conference Call / VideoConf — RETIRED (2026-07-17). Principal: no voice feature.
+      # Do not re-enable without explicit roadmap change + RC_CALL_ENABLED=1 lab gate.
+      OVERWRITE_SETTING_VideoConf_Enable_DMs: "false"
+      OVERWRITE_SETTING_VideoConf_Enable_Channels: "false"
+      OVERWRITE_SETTING_VideoConf_Enable_Groups: "false"
+      OVERWRITE_SETTING_VideoConf_Enable_Teams: "false"
+      OVERWRITE_SETTING_VideoConf_Mobile_Ringing: "false"
+    ports:
+      # IMP-06: loopback only by default (phone uses ngrok → 127.0.0.1:3000).
+      # For LAN HTTP override: RC_PORT_BIND=0.0.0.0 docker compose up -d
+      - "${RC_PORT_BIND:-127.0.0.1}:3000:3000"
+    healthcheck:
+      # IMP-04: image has no curl; use node http (Meteor/Node present in RC image)
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://127.0.0.1:3000/api/info',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\"",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+
+volumes:
+  mongodb_data:

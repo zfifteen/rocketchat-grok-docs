@@ -1,0 +1,19 @@
+# Runtime / host-only (never commit)
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+.benchmarks/
+*.pyc
+.DS_Store
+
+# Live operator state (agency host)
+wake/*_state.json
+wake/*_state.json.lock
+wake/state.json
+wake/multi_round_collab_state.json
+wake/multi_round_collab_state.json.lock
+
+# Local TLS material (generate on host)
+voice_room/certs/*.pem
+voice_room/certs/*-key.pem

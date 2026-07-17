@@ -1,0 +1,7 @@
+cmd: ["/bin/grok", "--output-format", "json"]
+
+{
+  "text": "ok",
+  "stopReason": "EndTurn",
+  "sessionId": "019f-test-endturn"
+}

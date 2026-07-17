@@ -1,0 +1,8 @@
+# Canonical Rocket.Chat public hostname (no scheme).
+# Charter Cujo blocks the retired free domain — do not revert.
+#
+# CANONICAL: velocityworks-rc.ngrok.app
+# FORBIDDEN: cash-scalded-enhance.ngrok-free.dev
+# FORBIDDEN_SUFFIX: .ngrok-free.dev
+#
+velocityworks-rc.ngrok.app

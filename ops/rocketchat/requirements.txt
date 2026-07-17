@@ -1,0 +1,8 @@
+# Rocket.Chat ↔ Grok operator runtime deps (IMP-13)
+websocket-client>=1.6.0
+# Call bot (Path C / voice room) + lobby-free voice_room server
+playwright>=1.40.0
+aiohttp>=3.9.0
+# NF-SPEC-01 True Voice (LiveKit + Grok Voice Agent Realtime)
+livekit>=0.17.0
+websockets>=12.0

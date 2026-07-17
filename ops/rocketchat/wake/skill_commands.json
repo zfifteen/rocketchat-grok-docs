@@ -1,0 +1,6 @@
+{
+  "_comment": "Rocket.Chat bang/slash command → Grok skill directory name under ~/.grok/skills. Keys are command tokens without ! or /. Values are skill folder names (must contain SKILL.md). Principal types e.g. !novel-insight [focus]. Mention-exempt like other control-plane commands.",
+  "novel-insight": "novel-insight-engine",
+  "novel_insight": "novel-insight-engine",
+  "novelinsight": "novel-insight-engine"
+}

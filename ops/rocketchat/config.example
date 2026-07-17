@@ -1,0 +1,61 @@
+# Rocket.Chat ↔ Grok — example config / env (IMP-03)
+# Copy values into ~/.grok/agency/secrets/rocketchat.env (mode 600) and/or process env.
+# Never commit real passwords or tokens.
+
+# --- Paths (optional overrides; defaults work on principal Mac) ---
+# RC_AGENCY_PATH=~/.grok/agency
+# RC_SECRETS_PATH=~/.grok/agency/secrets/rocketchat.env
+# RC_LOG_DIR=~/logs/rocketchat-dm-wake
+# RC_IDEA_PROJECTS=~/IdeaProjects
+# GROK_BIN=~/.local/bin/grok
+
+# --- Rocket.Chat HTTP (operator always prefers localhost; public URL for apps) ---
+RC_BASE=http://127.0.0.1:3000
+# ROCKETCHAT_ROOT_URL=https://velocityworks-rc.ngrok.app
+# ROCKETCHAT_PUBLIC_URL=https://velocityworks-rc.ngrok.app
+# NEVER use *.ngrok-free.dev (Cujo-blocked free domain retired).
+
+# --- Operator identity (password OR personal access token) ---
+ROCKETCHAT_OPERATOR_USERNAME=grok
+ROCKETCHAT_OPERATOR_PASSWORD=CHANGE_ME
+# Optional IMP-20 token path (preferred when both set):
+# ROCKETCHAT_OPERATOR_TOKEN=
+# ROCKETCHAT_OPERATOR_USER_ID=
+
+ROCKETCHAT_ADMIN_USERNAME=principal
+ROCKETCHAT_ADMIN_PASSWORD=CHANGE_ME
+ROCKETCHAT_ADMIN_EMAIL=principal@localhost.local
+
+# --- Wake policy ---
+RC_WAKE_APPROVAL_MODE=restricted
+RC_WAKE_ADMIN_DMS_ONLY=1
+RC_WAKE_MAX_TURNS=100
+RC_WAKE_TIMEOUT_S=600
+RC_WAKE_LOCK_STALE_S=900
+RC_WAKE_MAX_CONCURRENT=16
+RC_AUTO_CREATE_PROJECTS=0
+# Dual-operator tag-to-talk (Grok + Hermes share channels): require @operator for
+# LLM wakes in channels/groups. DMs free-wake. Control-plane !/ commands exempt.
+# Set on both operator launchd plists when both bots are live.
+# RC_REQUIRE_MENTION=1
+# RC_REQUIRE_MENTION_SCOPE=channels
+# RC_REQUIRE_MENTION_SCOPE=all
+# Peer bots / other humans @operator also wake (default ON). Set 0 for principal-only.
+# RC_PEER_TAG_WAKE=1
+
+# --- Multi-round collab (Grok lead + return-notify; any shared room) ---
+# RC_MULTI_ROUND_COLLAB=1
+# RC_MULTI_ROUND_PLAYBOOK=~/.grok/agency/ops/rocketchat/wake/RC_MULTI_ROUND_COLLAB_PLAYBOOK.md
+# RC_MULTI_ROUND_STATE=~/.grok/agency/ops/rocketchat/wake/multi_round_collab_state.json
+
+# --- NF-SPEC-06: emoji reactions on Thinking bubble (no extra text posts) ---
+# RC_WAKE_REACT=1
+# RC_WAKE_REACT_START=eyes
+# RC_WAKE_REACT_OK=white_check_mark
+# RC_WAKE_REACT_ERR=warning
+
+# --- Compose (generate with scripts/generate_compose_env.sh) ---
+# ROOT_URL=https://velocityworks-rc.ngrok.app
+# ADMIN_USERNAME=principal
+# ADMIN_PASS=CHANGE_ME
+# RC_PORT_BIND=127.0.0.1
