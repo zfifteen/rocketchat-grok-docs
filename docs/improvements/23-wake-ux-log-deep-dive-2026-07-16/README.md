@@ -1,12 +1,12 @@
 # IMP-23 — Wake / response UX rough edges (log deep dive)
 
-**Status:** In progress — Wave 1 (S1/S2) + S4/S7/S14 implemented 2026-07-16; residual S3/S5/S6/S8/S10–S13  
+**Status:** In progress — Wave 1 (S1/S2) + S4/S7/S14 + **S5 code** (2026-07-17); residual S3/S6/S8/S10–S13 + S5 live acceptance  
 **Date:** 2026-07-16  
 **Author:** hermes (principal: “experience still has rough edges — deep dive logs + list improvements”)  
 **Evidence window:** operator + wake-run logs under `~/logs/rocketchat-*-wake/` (through ~2026-07-17T01:00Z)  
 **Related:** [21 interaction bugs](../21-operator-interaction-bugs-2026-07-15/), [22 wake failure visibility](../22-wake-failure-visibility/), [phase-chrome plan](../../reviews/2026-07-14-phase-chrome-implementation-plan.md), [Heavy review](../../reviews/2026-07-14-rc-integration-heavy-review.md)
 
-**Nav:** [Index](../INDEX.md) · [Suggested improvements](./suggested-improvements.md) · [Evidence notes](./evidence.md) · [Implementation](./IMPLEMENTATION.md)
+**Nav:** [Index](../INDEX.md) · [Suggested improvements](./suggested-improvements.md) · [Evidence notes](./evidence.md) · [Implementation](./IMPLEMENTATION.md) · [S5 test plan](./test-plan-s5.md)
 
 ---
 
@@ -45,3 +45,4 @@ Quantify live wake/response friction from production logs, then rank concrete fi
 | `suggested-improvements.md` | Ranked S1–S14 improvements with acceptance |
 | `evidence.md` | Log quotes / event counts / sample wake-runs |
 | `IMPLEMENTATION.md` | What shipped (Wave 1 + helpers) + deploy/verify |
+| `test-plan-s5.md` | S5 in-flight busy chrome + follow-up queue test plan (pure / regression / mock / live) |
