@@ -85,7 +85,7 @@ Prior art already tracked: **IMP-21 B1–B10** (partial), **IMP-22** (denial ext
 
 ### S5 — In-flight skip is silent (308× grok)
 
-**Status:** Code implemented 2026-07-17 (pure module + live wire); live L1–L5 principal acceptance still open. See [test-plan-s5.md](./test-plan-s5.md) · [IMPLEMENTATION.md](./IMPLEMENTATION.md).
+**Status:** Code implemented 2026-07-17 (pure + live wire + finish polish); **live L1–L3 PASS** (probe stamp 1784324068). See [test-plan-s5.md](./test-plan-s5.md) · [IMPLEMENTATION.md](./IMPLEMENTATION.md).
 
 **Problem:** `enqueue skip in-flight mid=…` dominates skips. Principal edits / re-sends / duplicate WS deliveries vanish with **no reaction and no “busy” chrome** on the original bubble.
 

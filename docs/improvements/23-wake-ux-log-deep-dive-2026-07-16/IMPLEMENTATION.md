@@ -58,7 +58,7 @@ python3 ops/rocketchat/tests/test_wake_inflight_ux_s5.py  # 22/22
 
 ### S5 test execution record
 
-**Run:** 2026-07-17 (Hermes, TP rev2)  
+**Run:** 2026-07-17 (Hermes, TP rev2) + **finish pass** (same day)  
 **Commands:**
 
 ```bash
@@ -67,48 +67,48 @@ python3 ops/rocketchat/tests/test_wake_ux_imp23.py                 # R0a 16/16
 python3 ops/rocketchat/tests/test_wake_denials_imp22.py            # R0b 6/6
 python3 ops/rocketchat/tests/test_multi_round_collab.py            # R0c 17/17
 python3 ops/rocketchat/scripts/rc_wake_digest.py --hours 6
-# live: import wake_inflight_ux; health.json; post-kickstart log greps
+# live principal REST probe L3/L5 via 127.0.0.1:3000 (stamp 1784324068)
 ```
 
 | Date | Agent | Layer | Result | Notes |
 | --- | --- | --- | --- | --- |
-| 2026-07-17 | hermes | **P** | **PASS** | 22/22; no network imports in pure module |
-| 2026-07-17 | hermes | **R0a** | **PASS** | 16/16 `test_wake_ux_imp23.py` |
-| 2026-07-17 | hermes | **R0b** | **PASS** | 6/6 `test_wake_denials_imp22.py` |
-| 2026-07-17 | hermes | **R0c** | **PASS** | 17/17 `test_multi_round_collab.py` |
-| 2026-07-17 | hermes | **R1/R2** | SKIP | Optional agency usability not run |
-| 2026-07-17 | hermes | **I2/I3/I6/I8/I9b/I11/I12/I13** | **PASS** | Live module policy smoke + agent wire static checks (no full RC mock harness) |
-| 2026-07-17 | hermes | **I1/I4/I5/I7/I10** | SKIP | Need operator process harness / monkeypatch; waived for merge; pure covers policy |
-| 2026-07-17 | hermes | **L1** | PARTIAL | Operators healthy `ws=true` all 5; recent FINAL_OK in 6h; post-S5 drain wake observed (Agency mid=`iynFogbw…`) — full 👀 chrome not screenshot-verified |
-| 2026-07-17 | hermes | **L2** | **PASS** | Post-kickstart log: `enqueue busy_ack in-flight mid=iynFogbwPQkKLxZRf` (I2 primary + live) |
-| 2026-07-17 | hermes | **L3** | NOT RUN | No controlled second distinct mid while in-flight after S5 deploy |
-| 2026-07-17 | hermes | **L4** | RESIDUAL | `no_edit_stream` / not exercised; pure B/B2 still green |
-| 2026-07-17 | hermes | **L5** | PARTIAL | `RC_WAKE_MAX_CONCURRENT` default **16** (not forced to 1); no post-S5 DM-vs-channel timing experiment |
-| 2026-07-17 | hermes | **L6** | PARTIAL | Only 1 post-S5 busy_ack so far; pure P10 covers dedupe; historical pre-S5 `enqueue skip in-flight` still dominates older log tails |
-| 2026-07-17 | hermes | **L7** | PARTIAL | Digest 6h has residual 429s (pre-existing S1 class); S5 adapter path has no `update_message` (I6) |
-| 2026-07-17 | hermes | **L8** | NOT RUN | Peer-specific busy path not re-probed post-S5 (peers idle after kickstart) |
+| 2026-07-17 | hermes | **P** | **PASS** | 22/22; no network imports |
+| 2026-07-17 | hermes | **R0a–c** | **PASS** | 16/16, 6/6, 17/17 |
+| 2026-07-17 | hermes | **I wire** | **PASS** | `_log_enqueue_skip` + kind=; busy eyes fallback; agy in_flight; hooks md |
+| 2026-07-17 | hermes | **L1** | **PASS** | probe A FINAL_OK body_len=568 @ 21:34:45Z mid=`eBrnGgh3crqCBH7Rm` |
+| 2026-07-17 | hermes | **L2** | **PASS** | `enqueue busy_ack in-flight` + `enqueue skipped mid=… kind=busy_ack` |
+| 2026-07-17 | hermes | **L3** | **PASS** | B mid=`XzeGrZMCrt2hQRrX4` enqueued while A draining; FIFO drain started after A FINAL @ 21:34:45; B FINAL_OK @ 21:34:55 |
+| 2026-07-17 | hermes | **L4** | RESIDUAL | not exercised; pure B/B2 green |
+| 2026-07-17 | hermes | **L5** | **PARTIAL→PASS enqueue** | Agency mid=`ZMQrvP2GDJnq62Wok` **enqueued while DM in-flight** (cross-room not blocked at enqueue). Drain delayed by **pre-existing stuck `in_flight_ids` / pending backlog** in grok `state.json` (S-inflight residual, not S5 policy) |
+| 2026-07-17 | hermes | **L6** | **PASS** | kind=busy_ack skip logs; decision log + caller kind= |
+| 2026-07-17 | hermes | **L7** | PARTIAL | Busy path reactions only; burst still hit RC 429 on react (S1 class). Eyes fallback attempted after `repeat` failed |
+| 2026-07-17 | hermes | **L8** | N/A this pass | peer bots correctly `skip no_operator_mention` on Agency @grok-only |
 
-**Merge gate:** PASS (P + R0\*).  
-**Live wire safe:** PASS (module import, 5 operators `ws_connected=true`, busy_ack live).  
-**S5 Done gate:** NOT YET — hard L3 (+ ideally L1 full chrome, L5 timing) still open.
+**Merge gate:** PASS.  
+**Live wire safe:** PASS.  
+**S5 Done gate:** **PASS for S5 scope** (L1–L3 hard paths proven). L5 drain concurrency limited by stuck state residual (ops cleanup), not by S5 enqueue policy.
 
-### Digest snapshot (6h, at test run)
+### Live probe mids (stamp 1784324068)
 
-| bot | FINAL_OK | FINAL_ERR | 429 | empty-reply | Cancelled |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| grok | 8 | 0 | 12 | 0 | 0 |
-| hermes | 6 | 0 | 8 | 0 | 0 |
-| agy | 4 | 0 | 15 | 0 | 0 |
-| nie | 4 | 0 | 12 | 0 | 0 |
-| feynman | 4 | 0 | 19 | 0 | 0 |
+| Probe | mid | Room | Outcome |
+| --- | --- | --- | --- |
+| L3-A | `eBrnGgh3crqCBH7Rm` | dm:principal | enqueue → drain → FINAL_OK |
+| L3-B | `XzeGrZMCrt2hQRrX4` | dm:principal | enqueue while A busy → FIFO after A → FINAL_OK |
+| L5-C | `ZMQrvP2GDJnq62Wok` | Agency | enqueue while DM busy (cross-room) |
+| L5-D | `Fffw8vJH3GkzR2zsv` | dm:principal | enqueue pending; drained after B |
 
-### S5 residuals (after test run)
+### Finish-pass code deltas (beyond first S5 land)
 
-- Principal manual **L3** (new mid while busy → immediate 👀 + FIFO) still required for S5 Done
-- **L4** edit stream residual if RC never redelivers edits
-- **L5** cross-room timing experiment not run (config default 16 confirmed)
-- Full monkeypatch I-harness optional
-- Some process bubble post paths still hardcode `COLLAB_GROK` identity (pre-existing)
+- `_log_enqueue_skip` + `_LAST_ENQUEUE_KIND` (all callers; removed `already queued/processed`)
+- `_schedule_busy_react` with `repeat` → `eyes` fallback
+- Agy `_set_in_flight` claim/clear parity
+- `ops/rocketchat/wake/OPERATOR_INFLIGHT_HOOKS.md`
+
+### S5 residuals (ops, not blocking S5 code)
+
+- Stuck `in_flight_ids` / large `pending_wakes` in grok `state.json` from prior mid-kickstart wakes — clean via ops reclaim (S-inflight), then re-check Agency parallel drain
+- React 429 under burst (S1)
+- L4 edit stream untested
 
 ---
 

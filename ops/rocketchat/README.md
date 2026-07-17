@@ -14,6 +14,7 @@ This tree holds **reviewable copies** of the multi-round collab surface for PR r
 | `wake/wake_denials.py` | IMP-22 tool-denial extract |
 | `wake/wake_ux_imp23.py` | IMP-23 S1/S2/S4/S7 pure helpers |
 | `wake/wake_inflight_ux.py` | IMP-23 S5 in-flight busy / follow-up / pending-update policy |
+| `wake/OPERATOR_INFLIGHT_HOOKS.md` | Live `rc_operator_agent` S5 wire excerpt |
 | `wake/RC_MULTI_ROUND_COLLAB_PLAYBOOK.md` | Injected playbook (v3) |
 | `wake/OPERATOR_MULTI_ROUND_HOOKS.md` | Excerpt of `rc_operator_agent.py` wiring |
 | `tests/test_multi_round_collab.py` | Unit suite (loads runtime `WAKE_DIR` by default) |
