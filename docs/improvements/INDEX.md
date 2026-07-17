@@ -66,7 +66,7 @@ Each improvement folder links: **Index → Requirements ↔ Test plan**.
 | 19 | [Channel auto-create policy](19-channel-autocreate-policy/) | Low–medium | D | [req](19-channel-autocreate-policy/requirements.md) | [test](19-channel-autocreate-policy/test-plan.md) | **Done** |
 | 20 | [PGS / bot auth via shared token surface](20-pgs-bot-token/) | Low | D | [req](20-pgs-bot-token/requirements.md) | [test](20-pgs-bot-token/test-plan.md) | **Done** |
 | 21 | [Operator interaction bugs (B1–B10)](21-operator-interaction-bugs-2026-07-15/) | High | A | [README](21-operator-interaction-bugs-2026-07-15/README.md) | specs in folder | **In progress** |
-| 22 | [Wake failure visibility & restricted-tool diagnostics](22-wake-failure-visibility/) | High | A/B | [req](22-wake-failure-visibility/requirements.md) | [test](22-wake-failure-visibility/test-plan.md) | **Proposed** |
+| 22 | [Wake failure visibility & restricted-tool diagnostics](22-wake-failure-visibility/) | High | A/B | [req](22-wake-failure-visibility/requirements.md) | [test](22-wake-failure-visibility/test-plan.md) | **Implemented** (code+tests; restart ops to load) |
 
 ---
 

@@ -1,12 +1,13 @@
 # IMP-22 — Wake failure visibility & restricted-tool diagnostics
 
-**Status:** Proposed (docs + GitHub issue)  
+**Status:** Implemented (2026-07-16) — PR + live runtime patched; restart operators to load  
 **Date:** 2026-07-16  
 **Author:** hermes (principal request in #rocketchat-grok-docs)  
 **Runtime:** `~/.grok/agency/ops/rocketchat/wake/`  
+**Issue:** https://github.com/zfifteen/rocketchat-grok-docs/issues/4  
 **Related:** [IMP-01 approval](../../new-features/…), [improvement 21 interaction bugs](../21-operator-interaction-bugs-2026-07-15/), [B4-B5](../21-operator-interaction-bugs-2026-07-15/B4-B5-SPEC.md), phase-chrome FINAL_ERR
 
-**Nav:** [Index](../INDEX.md) · [Requirements](./requirements.md) · [Test plan](./test-plan.md)
+**Nav:** [Index](../INDEX.md) · [Requirements](./requirements.md) · [Test plan](./test-plan.md) · [Implementation](./IMPLEMENTATION.md)
 
 ---
 
