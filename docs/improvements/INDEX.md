@@ -1,6 +1,6 @@
 # Improvements index
 
-**Last updated:** 2026-07-14  
+**Last updated:** 2026-07-16  
 **Parent project:** [rocketchat-grok-docs README](../../README.md)  
 **Scope:** Suggested configuration and ops improvements for the live Rocket.Chat ↔ Grok stack (`~/.grok/agency/ops/rocketchat/` and related paths).
 
@@ -8,6 +8,10 @@ This folder is the **backlog package**: each item has a requirements document an
 
 **Cross-cutting code review (not yet turned into IMP-21+):**  
 [2026-07-14 RC integration Heavy review](../reviews/2026-07-14-rc-integration-heavy-review.md) — crash safety, state locking, media ledger, public voice auth, test gaps, docs drift. Prefer that doc when planning reliability work; promote individual IDs into new IMP folders when implementing.
+
+**Active interaction / wake UX packages:**  
+- [21 — Operator interaction bugs](21-operator-interaction-bugs-2026-07-15/) (B1–B10 multi-agent)  
+- [22 — Wake failure visibility](22-wake-failure-visibility/) (restricted tools → visible FINAL_ERR)
 
 ---
 
@@ -61,6 +65,8 @@ Each improvement folder links: **Index → Requirements ↔ Test plan**.
 | 18 | [Quarantine or remove poll path](18-quarantine-poll-path/) | Low (high if re-enabled) | D | [req](18-quarantine-poll-path/requirements.md) | [test](18-quarantine-poll-path/test-plan.md) | **Done** |
 | 19 | [Channel auto-create policy](19-channel-autocreate-policy/) | Low–medium | D | [req](19-channel-autocreate-policy/requirements.md) | [test](19-channel-autocreate-policy/test-plan.md) | **Done** |
 | 20 | [PGS / bot auth via shared token surface](20-pgs-bot-token/) | Low | D | [req](20-pgs-bot-token/requirements.md) | [test](20-pgs-bot-token/test-plan.md) | **Done** |
+| 21 | [Operator interaction bugs (B1–B10)](21-operator-interaction-bugs-2026-07-15/) | High | A | [README](21-operator-interaction-bugs-2026-07-15/README.md) | specs in folder | **In progress** |
+| 22 | [Wake failure visibility & restricted-tool diagnostics](22-wake-failure-visibility/) | High | A/B | [req](22-wake-failure-visibility/requirements.md) | [test](22-wake-failure-visibility/test-plan.md) | **Proposed** |
 
 ---
 
