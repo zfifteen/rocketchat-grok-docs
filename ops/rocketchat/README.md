@@ -1,96 +1,104 @@
-# ops/rocketchat — expanded reviewable mirror (Option 1)
+# ops/rocketchat — Stage 2 (git canonical)
 
-**Model:** Git holds a **reviewable mirror** of the Rocket.Chat operator stack.
-**Live runtime** remains: `~/.grok/agency/ops/rocketchat/` (launchd, secrets, state, logs, venv).
+**Model (Stage 2 / Option 2):**  
+**Git is the write source of truth** for integration code.  
+**Live** (`~/.grok/agency/ops/rocketchat/`) is a **deploy target** only (launchd, secrets, state, logs, venv).
 
 | Role | Path |
 | --- | --- |
-| Reviewable source (this tree) | `rocketchat-grok-docs/ops/rocketchat/` |
-| Live deploy target | `~/.grok/agency/ops/rocketchat/` |
+| **Canonical source (edit here)** | `rocketchat-grok-docs/ops/rocketchat/` |
+| Live deploy target (do not edit day-to-day) | `~/.grok/agency/ops/rocketchat/` |
 | Secrets (never in git) | `~/.grok/agency/secrets/rocketchat*.env` |
 | Logs | `~/logs/rocketchat-*-wake/` |
 
-**Option 2 later:** make this tree canonical and deploy *to* live only.
-**Option 3 (run from repo):** off the table.
+**Option 3 (run operators from the docs repo):** off the table.  
+**Emergency host edits:** allowed only with immediate `sync-mirror-from-live.sh` + commit (see below).
 
 ---
 
-## What is mirrored
+## Normal workflow (Stage 2)
 
-Reviewable code and examples:
+```text
+edit ops/rocketchat/  →  pure tests  →  commit / PR  →  merge main
+        →  ./scripts/after-merge-deploy.sh   # deploy + parity + kickstart
+```
+
+```bash
+cd /Users/velocityworks/IdeaProjects/rocketchat-grok-docs
+
+# 1. Develop in git
+# 2. Pure gates
+python3 ops/rocketchat/tests/test_wake_inflight_ux_s5.py
+python3 ops/rocketchat/tests/test_wake_ux_imp23.py
+python3 ops/rocketchat/tests/test_wake_denials_imp22.py
+python3 ops/rocketchat/tests/test_multi_round_collab.py
+
+# 3. After merge to main (or on main after commit)
+./ops/rocketchat/scripts/after-merge-deploy.sh
+```
+
+`after-merge-deploy.sh` = `deploy-mirror-to-live.sh` + `check-mirror-parity.sh` + operator kickstart.
+
+---
+
+## What lives in git
 
 - `wake/` — operator agent, wake_lib, telemetry, pure IMP-22/23 modules, prompts, playbooks, run scripts  
-- `tests/` — unit/integration suites (some need live RC / `RC_TEST_RUNTIME`)  
-- `scripts/` — health, digest, compose env, prune, backup  
+- `tests/` — unit/integration suites  
+- `scripts/` — health, digest, compose env, deploy/sync/reclaim  
 - `templates/` — launchd plist templates (IMP-11)  
-- `call/`, `voice_room/` — retired Call/voice archive (defaults off; see `VOICE_RETIRED.md`)  
-- Root docs: `MULTI_OPERATOR.md`, operator notes, `NO_DUPLICATE_POSTS.md`, `docker-compose.yml`, `config.example`, `.env.example`, `requirements.txt`, install helpers  
+- `call/`, `voice_room/` — retired Call/voice archive  
+- Root docs: `MULTI_OPERATOR.md`, operator notes, `docker-compose.yml`, `config.example`, `.env.example`, `requirements.txt`  
 
-## What is **never** mirrored (exclude list)
+## What never leaves the host
 
 | Exclude | Why |
 | --- | --- |
 | `.env` | Real compose admin password |
 | `.venv/` | Host rebuild via `setup-venv.sh` |
-| `__pycache__/`, `.pytest_cache/`, `.benchmarks/` | Ephemeral |
-| `wake/*_state.json`, `wake/state.json`, locks | Live queue/session state |
-| Anything under `~/.grok/agency/secrets/` | Credentials |
-
-Use `scripts/sync-mirror-from-live.sh` / `scripts/deploy-mirror-to-live.sh` so excludes stay consistent.
+| `__pycache__/`, `.pytest_cache/` | Ephemeral |
+| `wake/*_state.json`, locks | Live queue/session state |
+| `~/.grok/agency/secrets/*` | Credentials |
+| Installed LaunchAgents | Machine-specific after `install-launchd.sh` |
 
 ---
 
-## Pure tests (no RC network) — run from docs repo
+## Scripts
+
+| Script | Stage 2 use |
+| --- | --- |
+| **`after-merge-deploy.sh`** | **Default:** deploy → parity check → kickstart |
+| `deploy-mirror-to-live.sh` | Deploy only (`--kickstart` optional) |
+| `check-mirror-parity.sh` | Fail if critical files drift |
+| `sync-mirror-from-live.sh` | **Emergency only** — pull host edits back into git |
+| `reclaim-stuck-wake-state.sh` | Clear zombie inflight / dead locks |
+| `restore-pending-wakes.sh` | Opt-in restore of dropped pending |
+
+```bash
+# Emergency host hotfix path (discouraged)
+# 1) edit live only if operators are on fire
+# 2) immediately:
+./ops/rocketchat/scripts/sync-mirror-from-live.sh
+git add ops/rocketchat && git commit -m "sync: host emergency fix"
+git push
+# 3) treat git as truth again; next change starts in the repo
+```
+
+---
+
+## Pure tests (no RC network)
 
 ```bash
 cd /Users/velocityworks/IdeaProjects/rocketchat-grok-docs
 
-python3 ops/rocketchat/tests/test_wake_inflight_ux_s5.py   # IMP-23 S5 — expect 22/22
-python3 ops/rocketchat/tests/test_wake_ux_imp23.py          # Wave 1 — expect 16/16
-python3 ops/rocketchat/tests/test_wake_denials_imp22.py     # IMP-22 — expect 6/6
-python3 ops/rocketchat/tests/test_multi_round_collab.py     # multi-round pure — expect 17/17
+python3 ops/rocketchat/tests/test_wake_inflight_ux_s5.py   # 22/22
+python3 ops/rocketchat/tests/test_wake_ux_imp23.py          # 16/16
+python3 ops/rocketchat/tests/test_wake_denials_imp22.py     # 6/6
+python3 ops/rocketchat/tests/test_multi_round_collab.py     # 17/17
 ```
 
-`POLICY_WAKE` prefers this mirror’s `wake/` when pure modules are present.
-
----
-
-## Sync scripts
-
-```bash
-# After editing live host, pull reviewable files into git working tree
-./ops/rocketchat/scripts/sync-mirror-from-live.sh
-
-# After merging git changes, push reviewable files to live (does not touch secrets/state/venv)
-./ops/rocketchat/scripts/deploy-mirror-to-live.sh
-
-# Check critical file SHA parity (exit 1 if drift)
-./ops/rocketchat/scripts/check-mirror-parity.sh
-
-# Reclaim zombie in_flight_ids + dead room locks (backs up first)
-./ops/rocketchat/scripts/reclaim-stuck-wake-state.sh
-./ops/rocketchat/scripts/reclaim-stuck-wake-state.sh --drop-pending --kickstart
-
-# Opt-in restore of dropped pending_wakes (LIST backups; does not auto-spam)
-./ops/rocketchat/scripts/restore-pending-wakes.sh LIST
-# ./ops/rocketchat/scripts/restore-pending-wakes.sh ~/logs/rocketchat-state-reclaim/<stamp>/state.json.pending_wakes.json
-
-# Then restart operators so Python reloads:
-UID_NUM=$(id -u)
-for label in operator hermes-operator agy-operator feynman-operator nie-operator; do
-  launchctl kickstart -k "gui/${UID_NUM}/com.velocityworks.rocketchat-${label}"
-done
-```
-
-### Stage 1 habit (keep live ↔ mirror aligned)
-
-| You edited… | Then… |
-| --- | --- |
-| Host (`~/.grok/agency/…`) | `sync-mirror-from-live.sh` → review `git diff` → commit |
-| Git (`ops/rocketchat/`) | merge → `deploy-mirror-to-live.sh` → kickstart |
-| Unsure | `check-mirror-parity.sh` |
-
-Never commit `.env` or `*_state.json`.
+Live venv suites (after deploy):  
+`~/.grok/agency/ops/rocketchat/.venv/bin/python tests/test_usability_contracts.py`
 
 ---
 
@@ -98,37 +106,33 @@ Never commit `.env` or `*_state.json`.
 
 ```
 ops/rocketchat/
-├── README.md                 ← you are here
-├── config.example            ← env documentation (CHANGE_ME only)
-├── .env.example              ← compose template (CHANGE_ME only)
+├── README.md                 ← Stage 2 model (this file)
+├── config.example
+├── .env.example
 ├── docker-compose.yml
 ├── requirements.txt
 ├── install-launchd.sh
 ├── templates/*.plist.tmpl
 ├── wake/                     ← operators + pure policy
-│   ├── rc_operator_agent.py  ← full agent (reviewable)
-│   ├── wake_lib.py
-│   ├── wake_telemetry.py
-│   ├── wake_inflight_ux.py   ← IMP-23 S5 pure
-│   ├── wake_ux_imp23.py
-│   ├── wake_denials.py
-│   └── …
 ├── tests/
 ├── scripts/
-│   ├── sync-mirror-from-live.sh
+│   ├── after-merge-deploy.sh   ← Stage 2 default
 │   ├── deploy-mirror-to-live.sh
-│   └── rc_wake_digest.py
+│   ├── check-mirror-parity.sh
+│   ├── sync-mirror-from-live.sh  ← emergency only
+│   ├── reclaim-stuck-wake-state.sh
+│   └── …
 ├── call/                     ← retired
 └── voice_room/               ← retired
 ```
 
 ---
 
-## Workflow (Option 1)
+## History
 
-1. Prefer editing pure modules / docs in **this repo**; PR + review.  
-2. Or edit live, then `sync-mirror-from-live.sh` and commit.  
-3. After merge: `deploy-mirror-to-live.sh` + kickstart.  
-4. Never commit `.env` or state JSON.
-
-When Option 1 is stable, decide whether to implement **Option 2** (git canonical → deploy-only live).
+| Stage | Model |
+| --- | --- |
+| **0** | Code only under `~/.grok/agency` |
+| **1** | Expanded reviewable mirror; live still co-edited |
+| **2 (now)** | Git canonical; live = deploy target |
+| **3** | Run from repo — **rejected** |

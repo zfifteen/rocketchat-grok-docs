@@ -2,11 +2,11 @@
 
 ![Rocket.Chat ↔ Grok — documentation map](docs/assets/hero-banner.jpg)
 
-**Scope:** This is a read-only documentation map of the working Rocket.Chat +
-Grok integration on this Mac: message flow, processes, and **where every piece
-lives on disk**. Runtime code, secrets, and agency continuity live under
-`~/.grok/agency/` (and related OS paths). This repo documents those locations
-so the stack stays navigable.
+**Scope:** Documentation map **and** Stage 2 canonical ops code for the Rocket.Chat +
+Grok multi-operator stack on this Mac. **Edit integration code under
+[`ops/rocketchat/`](ops/rocketchat/)**; deploy to `~/.grok/agency/ops/rocketchat/` with
+`./ops/rocketchat/scripts/after-merge-deploy.sh`. Secrets, state, logs, and launchd
+installs stay on the host under `~/.grok/agency/` (and related OS paths).
 
 | Field | Value |
 | --- | --- |
@@ -76,20 +76,21 @@ CLI  (--cwd agency or ~/IdeaProjects/<channel>)
 
 | Kind of thing | Typical home | Why this home |
 | --- | --- | --- |
-| Integration code (**live**) | `~/.grok/agency/ops/rocketchat/` | launchd cwd, state, venv next to continuity |
-| Integration code (**git mirror**, Option 1) | [`ops/rocketchat/`](ops/rocketchat/) in this repo | PR review; deploy via `scripts/deploy-mirror-to-live.sh` |
+| Integration code (**canonical, Stage 2**) | [`ops/rocketchat/`](ops/rocketchat/) in this repo | Write source; PR + review |
+| Integration code (**live deploy target**) | `~/.grok/agency/ops/rocketchat/` | launchd cwd, state, venv — deploy only |
 | Continuity / mandate | `~/.grok/agency/` | Source of truth for the agency program |
 | Secrets | `~/.grok/agency/secrets/` | Mode 600; kept out of git |
 | Always-on jobs | `~/Library/LaunchAgents/` | macOS launchd requirement |
 | Logs / ledgers | `~/logs/rocketchat-dm-wake/` | Long-running process I/O |
 | Channel workspaces | `~/IdeaProjects/<slug>/` | Grok works *in* project dirs |
-| This documentation | `~/IdeaProjects/rocketchat-grok-docs/` | Stable map; live runtime stays under agency |
+| This documentation | `~/IdeaProjects/rocketchat-grok-docs/` | Map + canonical ops code under `ops/` |
 
-**Option 1 (current):** expand the reviewable mirror under `ops/rocketchat/` (code/examples/templates). Live remains agency; sync scripts never copy secrets/state/venv.  
-**Option 2 (later decision):** git becomes canonical; deploy only to live.  
-**Option 3 (run from repo):** off the table.
+**Stage 2 (current):** git (`ops/rocketchat/`) is canonical. After merge:  
+`./ops/rocketchat/scripts/after-merge-deploy.sh` (deploy + parity + kickstart).  
+**Option 3 (run from repo):** off the table.  
+Emergency host edits only: then `sync-mirror-from-live.sh` + commit immediately.
 
-Secrets, launchd installs, logs, Docker volumes, and operator state stay out of git.
+Secrets, installed launchd plists, logs, Docker volumes, and operator state stay out of git.
 
 ---
 
@@ -98,8 +99,9 @@ Secrets, launchd installs, logs, Docker volumes, and operator state stay out of 
 | Need | Path |
 | --- | --- |
 | Ops runbook | `~/.grok/agency/ops/ROCKETCHAT.md` |
-| Compose + code root (live) | `~/.grok/agency/ops/rocketchat/` |
-| Compose + code **mirror** | [`ops/rocketchat/`](ops/rocketchat/) |
+| Compose + code **canonical (git)** | [`ops/rocketchat/`](ops/rocketchat/) |
+| Compose + code root (live deploy) | `~/.grok/agency/ops/rocketchat/` |
+| After-merge deploy | `./ops/rocketchat/scripts/after-merge-deploy.sh` |
 | Operator agent | `…/rocketchat/wake/rc_operator_agent.py` |
 | Shared lib | `…/rocketchat/wake/wake_lib.py` |
 | Secrets | `~/.grok/agency/secrets/rocketchat.env` |

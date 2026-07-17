@@ -1,6 +1,6 @@
 # Operations
 
-**Last reviewed:** 2026-07-14
+**Last reviewed:** 2026-07-17
 
 Authoritative short runbook for URLs and phone setup remains:
 
@@ -8,11 +8,30 @@ Authoritative short runbook for URLs and phone setup remains:
 
 This page is a durable checklist aligned with that runbook.
 
+**Code model (Stage 2):** edit under  
+`~/IdeaProjects/rocketchat-grok-docs/ops/rocketchat/`  
+then deploy with `./ops/rocketchat/scripts/after-merge-deploy.sh`.
+
 **Suggested config fixes (requirements + test plans):**  
 [docs/improvements/INDEX.md](improvements/INDEX.md)
 
 **Full-stack review findings (2026-07-14, not yet fixed):**  
 [docs/reviews/2026-07-14-rc-integration-heavy-review.md](reviews/2026-07-14-rc-integration-heavy-review.md)
+
+---
+
+## Deploy code (Stage 2)
+
+```bash
+cd ~/IdeaProjects/rocketchat-grok-docs
+# after merge to main:
+./ops/rocketchat/scripts/after-merge-deploy.sh
+# = deploy-mirror-to-live + check-mirror-parity + kickstart operators
+
+# emergency host hotfix only:
+./ops/rocketchat/scripts/sync-mirror-from-live.sh
+# then commit immediately so git stays canonical
+```
 
 ---
 

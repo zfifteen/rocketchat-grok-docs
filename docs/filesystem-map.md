@@ -1,18 +1,21 @@
 # Filesystem map
 
-**Last reviewed:** 2026-07-10  
-**Machine:** principal Mac (`HOME=/Users/velocityworks`)
+**Last reviewed:** 2026-07-17  
+**Machine:** principal Mac (`HOME=/Users/velocityworks`)  
+**Code model:** **Stage 2** — canonical source in git `ops/rocketchat/`; live = deploy target
 
 Paths use `~` for the principal home. Expand to absolute form in launchd plists.
 
 ---
 
-## 1. Documentation (this project)
+## 1. Documentation + canonical ops (this project)
 
 | Path | Role |
 | --- | --- |
-| `~/IdeaProjects/rocketchat-grok-docs/` | Documentation-only project |
+| `~/IdeaProjects/rocketchat-grok-docs/` | Docs map + **Stage 2 canonical** integration code |
 | `…/README.md` | Entry point |
+| `…/ops/rocketchat/` | **Write source** for operators, compose examples, tests |
+| `…/ops/rocketchat/scripts/after-merge-deploy.sh` | Deploy git → live + kickstart |
 | `…/docs/` | Architecture, map, ops, related systems |
 | `…/docs/improvements/` | Ranked backlog; per-item requirements + test plans ([INDEX](improvements/INDEX.md)) |
 
@@ -26,7 +29,7 @@ Paths use `~` for the principal home. Expand to absolute form in launchd plists.
 | `…/START_HERE.md` | Bootstrap for “resume agency” |
 | `…/STATE.md` | Live mandate / next action |
 | `…/CHARTER.md`, `LEDGER.md`, `INVALIDATED.md`, `OFFER.md` | Program rules & history |
-| `…/ops/ROCKETCHAT.md` | **Runtime** RC + mobile runbook (source of truth for ops status) |
+| `…/ops/ROCKETCHAT.md` | **Runtime** RC + mobile runbook (ops status) |
 | `…/ops/NGROK.md` | Tunnel plan / domain notes |
 | `…/ops/PATHS.md` | Monetization path notes (not filesystem paths) |
 | `…/ops/OPERATOR_LOOP.md` | Operator work style |
@@ -35,9 +38,12 @@ DM default Grok `--cwd` is `~/.grok/agency`.
 
 ---
 
-## 3. Integration software (code + compose)
+## 3. Integration software (live deploy target)
 
-**Root:** `~/.grok/agency/ops/rocketchat/`
+**Canonical edit path:** `~/IdeaProjects/rocketchat-grok-docs/ops/rocketchat/`  
+**Live root (deploy only):** `~/.grok/agency/ops/rocketchat/`
+
+Do **not** day-to-day edit live; use `after-merge-deploy.sh` after git merge.
 
 | Path | Role |
 | --- | --- |

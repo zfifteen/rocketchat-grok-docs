@@ -44,11 +44,12 @@ fi
   --exclude '.git/' \
   "$MIRROR/" "$LIVE/"
 
-echo "done."
 if [[ "$DRY" != "--dry-run" ]]; then
+  echo "done."
   echo "Kickstart operators to reload Python:"
   echo "  UID_NUM=\$(id -u)"
   echo "  for label in operator hermes-operator agy-operator feynman-operator nie-operator; do"
   echo "    launchctl kickstart -k \"gui/\${UID_NUM}/com.velocityworks.rocketchat-\${label}\""
   echo "  done"
+  echo "Or Stage 2 one-shot: ./scripts/after-merge-deploy.sh"
 fi
