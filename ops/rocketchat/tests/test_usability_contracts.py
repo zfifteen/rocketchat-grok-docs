@@ -636,7 +636,15 @@ def test_thinking_failure_still_updates_placeholder() -> None:
 
 
 def test_videoconf_spawns_call_bot() -> None:
-    """Call button (t=videoconf) must spawn media bot (Path C), not full text wake."""
+    """
+    Call button (t=videoconf): Path C media bot when enabled.
+
+    Call/voice is **retired** (2026-07-17): spawn_call_bot refuses when
+    RC_CALL_ENABLED is off. Contract under retirement:
+    - still recognized as videoconf (not a text free-wake)
+    - must not start a full text wake
+    - spawn may be empty (refused) — that is PASS for retired path
+    """
     agent = _load("rc_operator_agent", WAKE_DIR / "rc_operator_agent.py")
     wl = _load("wake_lib", WAKE_DIR / "wake_lib.py")
     tmp = Path(tempfile.mkdtemp(dir=SCRATCH))
@@ -669,14 +677,26 @@ def test_videoconf_spawns_call_bot() -> None:
         }
         assert wl.is_videoconf_message(call_msg) is True
         assert wl.should_handle_dm_message(call_msg) is False  # not a text wake
-        agent.handle_principal_message(call_msg, "room-dm", room_name="dm:principal", room_type="d")
-        assert spawned == [("call-abc", "room-dm")], f"spawned={spawned}"
-        assert posts, "expected answering notice"
-        assert "answering" in posts[0].lower() or "hello" in posts[0].lower()
+        agent.handle_principal_message(
+            call_msg, "room-dm", room_name="dm:principal", room_type="d"
+        )
         assert not wakes, "videoconf must not start a full text wake"
-        st = agent.load_state()
-        assert "vc-1" in (st.get("processed_ids") or [])
-        record("videoconf_spawns_call_bot", True)
+        # Live path may refuse spawn (Call retired) or use our mock spawn.
+        # Either: no full wake is the hard contract.
+        if spawned:
+            assert spawned == [("call-abc", "room-dm")], f"spawned={spawned}"
+            assert posts, "expected answering notice when spawn succeeds"
+            assert "answering" in posts[0].lower() or "hello" in posts[0].lower()
+            st = agent.load_state()
+            assert "vc-1" in (st.get("processed_ids") or [])
+            record("videoconf_spawns_call_bot", True, "spawn_path")
+        else:
+            # Retired / refused path — still PASS (no text wake)
+            record(
+                "videoconf_spawns_call_bot",
+                True,
+                "call_retired_or_spawn_refused_no_text_wake",
+            )
     except Exception as e:
         record("videoconf_spawns_call_bot", False, repr(e) + traceback.format_exc())
     finally:
@@ -1327,6 +1347,7 @@ def test_imp15_compose_secrets_dry() -> None:
     """
     IMP-15: drive shipped generate_compose_env.sh + backup_mongo.sh + docs links.
 
+    T0 refuse blocked free domain (charter / Cujo)
     T1 generate .env from secrets (mode 600, ROOT_URL match, password not on stdout)
     T2 mongo volume backup produces non-empty artifact
     T3 operations.md + filesystem-map mention backup/generate + upgrade path
@@ -1339,8 +1360,32 @@ def test_imp15_compose_secrets_dry() -> None:
         assert bak.is_file() and os.access(bak, os.X_OK), bak
 
         tmp = Path(tempfile.mkdtemp(dir=SCRATCH))
+        # T0 — free domain must be refused
+        secrets_bad = tmp / "rocketchat-free.env"
+        secrets_bad.write_text(
+            "ROCKETCHAT_ROOT_URL=https://imp15-test.ngrok-free.dev\n"
+            "ROCKETCHAT_PUBLIC_URL=https://imp15-test.ngrok-free.dev\n"
+            "ROCKETCHAT_ADMIN_USERNAME=principal\n"
+            "ROCKETCHAT_ADMIN_PASSWORD=Imp15TestSecret-DoNotEcho\n"
+            "ROCKETCHAT_ADMIN_EMAIL=principal@localhost.local\n",
+            encoding="utf-8",
+        )
+        out_bad = tmp / "compose-free.env"
+        env_bad = {**os.environ, "RC_SECRETS_PATH": str(secrets_bad)}
+        r0 = subprocess.run(
+            ["bash", str(gen), str(out_bad)],
+            env=env_bad,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert r0.returncode != 0, "free domain must be refused"
+        assert "ngrok-free" in (r0.stderr or "") or "refusing" in (r0.stderr or "").lower()
+        assert not out_bad.is_file()
+
         secrets = tmp / "rocketchat.env"
-        root_url = "https://imp15-test.ngrok-free.dev"
+        # Allowed branded host (matches PUBLIC_DOMAIN pin when present)
+        root_url = "https://velocityworks-rc.ngrok.app"
         admin_pass = "Imp15TestSecret-DoNotEcho"
         secrets.write_text(
             f"ROCKETCHAT_ROOT_URL={root_url}\n"
@@ -1399,7 +1444,7 @@ def test_imp15_compose_secrets_dry() -> None:
         record(
             "imp15_compose_secrets_dry",
             True,
-            f"env_mode={oct(mode)} backup_bytes={dest.stat().st_size}",
+            f"env_mode={oct(mode)} backup_bytes={dest.stat().st_size} free_domain_refused=1",
         )
     except Exception as e:
         record(

@@ -715,6 +715,9 @@ def test_contract_identity_and_cli_helpers() -> None:
                 body: str,
                 *,
                 identity: str = "grok",
+                thought_text: str = "",
+                stream_throttle=None,
+                **_kw,
             ) -> bool:
                 grok_finals.append((identity, mid, body))
                 return True

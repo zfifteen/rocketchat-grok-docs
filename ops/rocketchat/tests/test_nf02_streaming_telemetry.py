@@ -395,6 +395,8 @@ def test_operator_final_ok_reply_file() -> None:
     try:
         agent = _load("rc_operator_agent", WAKE_DIR / "rc_operator_agent.py")
         tmp = Path(tempfile.mkdtemp(dir=SCRATCH))
+        prev_sync = os.environ.get("RC_WAKE_DRAIN_SYNC")
+        os.environ["RC_WAKE_DRAIN_SYNC"] = "1"
         try:
             agent.LOG_DIR = tmp / "logs"
             agent.LOG_DIR.mkdir(parents=True)
@@ -448,6 +450,10 @@ def test_operator_final_ok_reply_file() -> None:
 
             record("operator_final_ok_reply_file", True)
         finally:
+            if prev_sync is None:
+                os.environ.pop("RC_WAKE_DRAIN_SYNC", None)
+            else:
+                os.environ["RC_WAKE_DRAIN_SYNC"] = prev_sync
             shutil.rmtree(tmp, ignore_errors=True)
     except Exception as e:
         record(
@@ -462,6 +468,8 @@ def test_bubble_lifecycle_meta_then_final() -> None:
     try:
         agent = _load("rc_operator_agent", WAKE_DIR / "rc_operator_agent.py")
         tmp = Path(tempfile.mkdtemp(dir=SCRATCH))
+        prev_sync = os.environ.get("RC_WAKE_DRAIN_SYNC")
+        os.environ["RC_WAKE_DRAIN_SYNC"] = "1"
         try:
             agent.LOG_DIR = tmp / "logs"
             agent.LOG_DIR.mkdir(parents=True)
@@ -523,6 +531,10 @@ def test_bubble_lifecycle_meta_then_final() -> None:
 
             record("bubble_lifecycle_meta_then_final", True)
         finally:
+            if prev_sync is None:
+                os.environ.pop("RC_WAKE_DRAIN_SYNC", None)
+            else:
+                os.environ["RC_WAKE_DRAIN_SYNC"] = prev_sync
             shutil.rmtree(tmp, ignore_errors=True)
     except Exception as e:
         record(
@@ -561,8 +573,10 @@ def test_meta_finalized_guard_and_join() -> None:
         body = src[start:end]
         assert "stream_finalized" in body
         assert ".join(" in body
-        fin_idx = body.index("finalize_thinking_message")
+        # First finalize_thinking_message may be agy/err branches; require set()
+        # before the finalize that follows stream_finalized.set() (main path).
         set_idx = body.index("stream_finalized.set()")
+        fin_idx = body.index("finalize_thinking_message", set_idx)
         assert set_idx < fin_idx, "stream_finalized must be set before finalize"
         assert "if stream_finalized.is_set()" in body
 

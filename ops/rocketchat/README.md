@@ -64,12 +64,33 @@ python3 ops/rocketchat/tests/test_multi_round_collab.py     # multi-round pure �
 # After merging git changes, push reviewable files to live (does not touch secrets/state/venv)
 ./ops/rocketchat/scripts/deploy-mirror-to-live.sh
 
+# Check critical file SHA parity (exit 1 if drift)
+./ops/rocketchat/scripts/check-mirror-parity.sh
+
+# Reclaim zombie in_flight_ids + dead room locks (backs up first)
+./ops/rocketchat/scripts/reclaim-stuck-wake-state.sh
+./ops/rocketchat/scripts/reclaim-stuck-wake-state.sh --drop-pending --kickstart
+
+# Opt-in restore of dropped pending_wakes (LIST backups; does not auto-spam)
+./ops/rocketchat/scripts/restore-pending-wakes.sh LIST
+# ./ops/rocketchat/scripts/restore-pending-wakes.sh ~/logs/rocketchat-state-reclaim/<stamp>/state.json.pending_wakes.json
+
 # Then restart operators so Python reloads:
 UID_NUM=$(id -u)
 for label in operator hermes-operator agy-operator feynman-operator nie-operator; do
   launchctl kickstart -k "gui/${UID_NUM}/com.velocityworks.rocketchat-${label}"
 done
 ```
+
+### Stage 1 habit (keep live ↔ mirror aligned)
+
+| You edited… | Then… |
+| --- | --- |
+| Host (`~/.grok/agency/…`) | `sync-mirror-from-live.sh` → review `git diff` → commit |
+| Git (`ops/rocketchat/`) | merge → `deploy-mirror-to-live.sh` → kickstart |
+| Unsure | `check-mirror-parity.sh` |
+
+Never commit `.env` or `*_state.json`.
 
 ---
 
