@@ -24,22 +24,11 @@ SALVAGE_CANCELLED_MIN_CHARS = 80
 DEFAULT_429_BACKOFF_S = 6.0
 DEFAULT_429_BACKOFF_MAX_S = 32.0
 
+# Redact key: value through end of line so "Authorization: Bearer <jwt>" cannot
+# leave the token after a single \S+ match. Also catch sk-… API key shapes.
 _SECRET_LIKE = re.compile(
-    r"(?i)(authorization|x-auth-token|api[_-]?key|token)\s*[:=]\s*\S+|sk-[A-Za-z0-9]{10,}"
+    r"(?i)(?:(authorization|x-auth-token|api[_-]?key|token)\s*[:=]\s*.+|sk-[A-Za-z0-9]{10,})"
 )
-
-
-def _env_flag(raw: str | None, *, default: bool) -> bool:
-    if raw is None:
-        return default
-    v = str(raw).strip().lower()
-    if not v:
-        return default
-    if v in ("0", "false", "no", "off"):
-        return False
-    if v in ("1", "true", "yes", "on"):
-        return True
-    return default
 
 
 def _env_float(source: Mapping[str, str], key: str, default: float, *, floor: float = 0.0) -> float:
@@ -91,16 +80,38 @@ def extract_salvageable_body(
     *,
     stop_reason: str | None = None,
 ) -> str | None:
-    """Clean salvage body, or None (S2). Prefer trailing bullet/heading block."""
+    """Clean salvage body, or None (S2).
+
+    Prefer a *trailing* structured section when present:
+    - last markdown heading (``#`` / ``##`` / ``###``) through EOF, else
+    - start of the last contiguous bullet list (blank lines allowed inside).
+    Otherwise keep the full text when it is salvageable.
+    """
     t = (text or "").strip()
     if not t:
         return None
     lines = t.splitlines()
-    start = None
+    last_heading: int | None = None
+    last_bullet_run_start: int | None = None
+    bullet_run: int | None = None
     for i, line in enumerate(lines):
-        if re.match(r"^\s*[-*•]\s+\S", line) or re.match(r"^\s*#{1,3}\s+\S", line):
-            start = i
-            break
+        if re.match(r"^\s*#{1,3}\s+\S", line):
+            last_heading = i
+            bullet_run = None
+            continue
+        if re.match(r"^\s*[-*•]\s+\S", line):
+            if bullet_run is None:
+                bullet_run = i
+            last_bullet_run_start = bullet_run
+            continue
+        # Non-empty prose breaks an open bullet run (blank lines do not).
+        if line.strip():
+            bullet_run = None
+    start: int | None = None
+    if last_heading is not None:
+        start = last_heading
+    elif last_bullet_run_start is not None:
+        start = last_bullet_run_start
     candidate = t
     if start is not None:
         tail = "\n".join(lines[start:]).strip()
@@ -233,8 +244,8 @@ def cross_process_update_wait(
 ) -> float:
     """S4-lite: file mtime token bucket. Returns seconds caller should sleep.
 
-    All operators share one path (e.g. log_dir/rc-update.bucket) so concurrent
-    identities on the same RC host do not stampede chat.update.
+    Pass the *same* path on every operator (use ``default_shared_update_bucket()``).
+    Per-operator ``LOG_DIR/rc-update.bucket`` is only a local gap, not host-wide.
     """
     path = Path(bucket_path)
     t = time.time() if now is None else now
@@ -256,6 +267,19 @@ def cross_process_update_touch(bucket_path: Path | str, *, now: float | None = N
         path.write_text(str(time.time() if now is None else now), encoding="utf-8")
     except OSError:
         pass
+
+
+def default_shared_update_bucket() -> Path:
+    """Canonical host-wide S4 bucket — every operator process must share this path.
+
+    Live wire must NOT use per-bot ``LOG_DIR / rc-update.bucket`` if the goal is
+    a room/host-wide chat.update budget. Override with env ``RC_UPDATE_BUCKET``
+    when set (absolute or ~-expandable path).
+    """
+    raw = (os.environ.get("RC_UPDATE_BUCKET") or "").strip()
+    if raw:
+        return Path(raw).expanduser()
+    return Path.home() / "logs" / "rocketchat-shared" / "rc-update.bucket"
 
 
 def final_cool_sleep_s(

@@ -10,13 +10,13 @@
 | --- | --- |
 | **S1** 429 non-final backoff | `wake_ux_imp23.RateLimitBackoff`; wired in `rc_operator_agent` thought/meta flush |
 | **S1** final cool clamp | `final_cool_sleep_s` used in `finalize_thinking_message` |
-| **S2** stronger Cancelled salvage | `is_salvageable_wake_text(..., stop_reason=)`; mid-length Cancelled OK |
+| **S2** stronger Cancelled salvage | `is_salvageable_wake_text(..., stop_reason=)`; mid-length Cancelled OK; trailing structured section; multi-token secret redaction |
 | **S2** skip empty-reply retry when stream salvageable / FINAL_OK | `should_skip_empty_reply_retry` + operator gate (`phase == FINAL_ERR` only) |
-| **S4-lite** shared update gap | `cross_process_update_*` → `LOG_DIR/rc-update.bucket` before FINAL |
-| **S4** correct update identity | thought/meta `chat.update` uses `OPERATOR`, not hardcoded grok |
+| **S4-lite** shared update gap | `cross_process_update_*` + **`default_shared_update_bucket()`** → `~/logs/rocketchat-shared/rc-update.bucket` (or `RC_UPDATE_BUCKET`). Live must use this path on **every** operator — per-bot `LOG_DIR/rc-update.bucket` is local-only and does **not** meet S4 acceptance. |
+| **S4** correct update identity | thought/meta `chat.update` uses `OPERATOR`, not hardcoded grok (residual: some bubble post/finalize still `COLLAB_GROK` in live agent) |
 | **S7** missing cwd FINAL_ERR | `validate_wake_cwd` before spawn; clears bad pin |
 | **S8 note** drain log target | `target={OPERATOR}` in drain line (B8) |
-| **S14** digest | `ops/rocketchat/scripts/rc_wake_digest.py` |
+| **S14** digest | `ops/rocketchat/scripts/rc_wake_digest.py` — counts **ISO-timestamped lines** with `ts >= now - hours` (not whole file tail) |
 
 ## Docs-repo mirror
 
@@ -55,9 +55,15 @@ python3 ops/rocketchat/tests/test_wake_denials_imp22.py
 python3 ops/rocketchat/scripts/rc_wake_digest.py
 ```
 
-## Not in this PR (still proposed)
+## Not in this PR (still residual)
 
 S3 agy FINAL_ERR deep fix, S5 in-flight busy chrome, S6 double-seen, S8 B3/B10 launchd wire, S9 kickstart (ops), S10 phase-chrome, S11 short body quality, S12 health fields.
+
+**Live wire residuals (agency `rc_operator_agent`, not fully mirrored):**
+- Non-final update failures still call `note_429()` even when the failure is not HTTP 429 (over-backoff risk).
+- Some bubble post/finalize/ack paths still hardcode `COLLAB_GROK` while thought flush uses `op_identity`.
+- Dual S7 paths (early `validate_wake_cwd` vs older missing-cwd block) — keep until older block is removed.
+- Must set FINAL bucket to `default_shared_update_bucket()` (or `RC_UPDATE_BUCKET`) on all operators after copy/restart.
 
 ## Env
 
@@ -68,3 +74,4 @@ S3 agy FINAL_ERR deep fix, S5 in-flight busy chrome, S6 double-seen, S8 B3/B10 l
 | `RC_429_BACKOFF_MAX_S` | 32 | Cap backoff |
 | `RC_WAKE_AUTO_RETRY` | on | Empty-reply retry (still gated by S2) |
 | `RC_RETRY_COOLDOWN_S` | 60 | Per-room retry cool |
+| `RC_UPDATE_BUCKET` | `~/logs/rocketchat-shared/rc-update.bucket` | Host-wide S4 chat.update gap file |

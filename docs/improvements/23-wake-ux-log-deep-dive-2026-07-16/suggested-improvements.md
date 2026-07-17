@@ -1,8 +1,8 @@
 # Suggested improvements — wake / response UX (log-backed)
 
-**Package:** [IMP-23 README](./README.md)  
+**Status:** Wave 1 implemented 2026-07-16 (S1/S2/S4-lite/S7/S14); residual S3/S5/S6/S8/S10–S13 + live identity/note_429 hardening  
 **Evidence:** [evidence.md](./evidence.md)  
-**Status:** Proposed 2026-07-16  
+**Package:** [IMP-23 README](./README.md) 
 
 Prior art already tracked: **IMP-21 B1–B10** (partial), **IMP-22** (denial extract implemented; operators may need restart), phase-chrome plan, Heavy review H/M items. Items below are **new or re-prioritized from live logs** — not a rehash of “cap blast radius.”
 
@@ -11,6 +11,8 @@ Prior art already tracked: **IMP-21 B1–B10** (partial), **IMP-22** (denial ext
 ## P0 — Fix what the phone user feels every busy session
 
 ### S1 — Global `chat.update` rate budget (implements IMP-21 **B4**, raises priority)
+
+**Status:** Wave 1 partial — `RateLimitBackoff` + `final_cool_sleep_s` pure + live wire; residual: only call `note_429` on real 429s; full host-wide budget needs shared bucket (S4).
 
 **Problem:** Across operators, logs show **hundreds of HTTP 429** failures on `update_message` (grok 491, hermes 235, agy 316 in current corpora). Stream thought flush + multi-bot concurrent finals still thrash Rocket.Chat. Evidence peaks at 10–24 failures **per minute**. Two historical finals landed `phase=FINAL_OK ok=False` (body never painted).
 
@@ -30,6 +32,8 @@ Prior art already tracked: **IMP-21 B1–B10** (partial), **IMP-22** (denial ext
 
 ### S2 — Cancelled + empty reply file is the Grok failure mode (implements **B5** + extends IMP-22)
 
+**Status:** Wave 1 implemented — stronger salvage, trailing structured section, secret redaction, `should_skip_empty_reply_retry`; residual: Grok CLI always writing reply file.
+
 **Problem:** Last 120 grok wake-runs: **~22 Cancelled** vs ~95 EndTurn. Operator scheduled **11 empty-reply recoveries**; ~4 still ended FINAL_ERR after retry. Anatomy of Cancelled runs often includes **streamed `text` chunks** and lots of `thought`, then `stopReason=Cancelled` with **no reply-file body** → bubble falls through to thin FINAL_ERR (body_len≈235).
 
 **Honest root:** Not primarily “restricted tool deny” (IMP-22). Pattern looks like **CLI cancelled mid-turn** (user-cancel style end, permission friction, or session interrupt) while streaming partial answer to stdout **but not the reply file**.
@@ -48,6 +52,8 @@ Prior art already tracked: **IMP-21 B1–B10** (partial), **IMP-22** (denial ext
 
 ### S3 — Agy FINAL_ERR rate is structurally high
 
+**Status:** Residual (not Wave 1).
+
 **Problem:** Agy logs: **33 FINAL_ERR vs 91 FINAL_OK** (~27% error finalize). Many recent Agency wakes end `FINAL_ERR body_len=173 stopReason=-` and **quality_gate suppress return-notify**. Collab looks “dead” to principal when agy is assigned.
 
 **Do:**
@@ -62,11 +68,13 @@ Prior art already tracked: **IMP-21 B1–B10** (partial), **IMP-22** (denial ext
 
 ### S4 — Multi-operator 429 is a **shared room** problem, not per-bot isolation
 
+**Status:** Wave 1 pure helper done (`default_shared_update_bucket`); live must switch all operators off per-bot `LOG_DIR` buckets. Identity audit residual (some `COLLAB_GROK` hardcodes remain).
+
 **Problem:** Spec B4 R4-4 assumed separate RC identities isolate rate limits. Live logs show **hermes/nie logging `update_message identity=grok failed … 429`** and all five operators hammering the same minutes (e.g. 2026-07-17 00:51–00:52). Either wrong identity in log, shared token misuse, or RC limits are **room/IP-global**.
 
 **Do:**
 1. Audit each operator’s REST auth: hermes must never call `chat.update` as grok.
-2. If limits are global: add **cross-process update token bucket** (file lock or local Redis-less lease under `~/logs/rocketchat-dm-wake/rc-update.bucket`) shared by all operators.
+2. If limits are global: add **cross-process update token bucket** (file lock or local Redis-less lease under `~/logs/rocketchat-shared/rc-update.bucket`) shared by all operators.
 3. Stagger thought flush phase by operator (hash identity → offset ms).
 
 **Acceptance:** Under 4-bot collab, no identity mis-attribution in logs; 429/minute room-wide &lt; 5.
