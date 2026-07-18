@@ -1,6 +1,6 @@
 # Improvements index
 
-**Last updated:** 2026-07-16  
+**Last updated:** 2026-07-18  
 **Parent project:** [rocketchat-grok-docs README](../../README.md)  
 **Scope:** Suggested configuration and ops improvements for the live Rocket.Chat ↔ Grok stack (`~/.grok/agency/ops/rocketchat/` and related paths).
 
@@ -13,6 +13,7 @@ This folder is the **backlog package**: each item has a requirements document an
 - [21 — Operator interaction bugs](21-operator-interaction-bugs-2026-07-15/) (B1–B10 multi-agent)  
 - [22 — Wake failure visibility](22-wake-failure-visibility/) (restricted tools → visible FINAL_ERR)  
 - [23 — Wake UX log deep dive](23-wake-ux-log-deep-dive-2026-07-16/) (2026-07-16 production logs → S1–S14)
+- [24 — Epoch ownership token](24-epoch-ownership-token/) (sharper multi-round lead than env-only `GROK_LEAD`)
 
 ---
 
@@ -69,6 +70,8 @@ Each improvement folder links: **Index → Requirements ↔ Test plan**.
 | 21 | [Operator interaction bugs (B1–B10)](21-operator-interaction-bugs-2026-07-15/) | High | A | [README](21-operator-interaction-bugs-2026-07-15/README.md) | specs in folder | **In progress** |
 | 22 | [Wake failure visibility & restricted-tool diagnostics](22-wake-failure-visibility/) | High | A/B | [req](22-wake-failure-visibility/requirements.md) | [test](22-wake-failure-visibility/test-plan.md) | **Implemented** (code+tests; restart ops to load) |
 | 23 | [Wake / response UX log deep dive → S1–S14](23-wake-ux-log-deep-dive-2026-07-16/) | High | A/B | [list](23-wake-ux-log-deep-dive-2026-07-16/suggested-improvements.md) | [evidence](23-wake-ux-log-deep-dive-2026-07-16/evidence.md) | **In progress** (Wave 1 S1/S2 + S4/S7/S14 + **S5 code**; residual S3/S6/S8/S10–S13 + S5 live L*) |
+| 24 | [Epoch ownership token (multi-round lead)](24-epoch-ownership-token/) | High (when non-grok lead trials) | A | [README](24-epoch-ownership-token/README.md) | [z-map](24-epoch-ownership-token/z-map.md) | **Proposed** (nie peer; month residual) |
+| 25 | [IMP-B stream/intentional wake honesty](25-imp-b-stream-intentional/) | High | A | [impl](25-imp-b-stream-intentional/implementation-plan.md) | [test](25-imp-b-stream-intentional/test-plan.md) | **Plan draft** (hermes lead) |
 
 ---
 
