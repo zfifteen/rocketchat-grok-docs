@@ -4,67 +4,49 @@
 
 # Features & benefits
 
-**Rocket.Chat Agents turns Rocket.Chat into your always-on multi-agent command center.** Staff a living roster of specialized AI operators — each a first-class chat identity with its own model, tools, and project workspace — then run them as a coordinated team from your laptop or phone. Tag who you need, watch work stream in real time, hand tasks across operators in multi-round collab, and keep every channel rooted in the real codebase it owns. This is agent workforce infrastructure on the chat surface you already use: parallel rooms, durable sessions, production deploy discipline, and collaboration built for sustained delivery.
+**Turn Rocket.Chat into your always-on, phone-reachable multi-agent command center.**  
+Staff a living roster of specialized AI operators—each a first-class chat identity with its own model, tools, and project workspace—then run them as a coordinated team from your laptop or phone. Tag who you need, watch work stream in real time, hand tasks across operators with structured multi-round collaboration, and keep every channel rooted in the real codebase it owns.
 
-## Highlights
+This is agent workforce infrastructure on the chat surface you already use: parallel rooms, durable sessions, production-grade deploy discipline, and collaboration built for sustained delivery.
 
-- **A full operator roster in one workspace** — Grok, Hermes, Antigravity, and peer specialists side by side, each with its own identity, backend, and presence in every room it serves.
-- **Multi-round collaboration that compounds** — lead fan-out, peer delivery, quality-gated return-notify, and clean DONE close-out so multi-hop threads finish stronger than they started.
-- **Agents that work where your code lives** — every channel maps to a real project directory; operators spawn with the right `--cwd` and ship against the tree you care about.
-- **Presence from anywhere** — local Rocket.Chat plus public HTTPS puts your entire agent team in your pocket.
-- **Ops built to ship** — git-canonical integration code, reviewable PRs, pure test gates, deploy parity, and one-command promote to the live host.
+## What makes it stand out
 
-## Features
+- **First-class operator identities** — Every bot (`grok`, `hermes`, `agy`, peers such as `nie` / `feynman`, …) is a real Rocket.Chat user with its own WebSocket bridge, isolated secrets, state, logs, and launchd KeepAlive. Mentions, reactions, and room membership feel like staffing a team—because you are.
+
+- **Multi-round collaboration as a first-class protocol** — Lead assigns, peers deliver, quality-gated return-notify synthesizes, and a clean `DONE` closes the epoch. Shared rooms become long-horizon multi-agent workspaces that compound.
+
+- **Project-aware execution at the core** — Every channel maps to a real directory (`~/IdeaProjects/<slug>` or your agency spine). Operators spawn with the correct `--cwd` and ship against the tree you care about.
+
+- **A wake UX that matches the pace of real work** — Streaming thinking/working phases in a single answer bubble, busy-aware acknowledgment with ordered follow-up enqueue, per-room serial depth + cross-room parallelism (default **16**), and a strict one-answer-bubble rule.
+
+- **Production-grade ops discipline** — Git is the canonical source (Stage 2). Live host is deploy-only. Pure tests are merge gates, parity checks are automated, and `after-merge-deploy.sh` is a repeatable path from laptop to running system.
+
+- **One repository for product and runtime** — Specs, research, implementation plans, test plans, ranked improvements, heavy reviews, and the integration code live together so intent and implementation stay aligned.
+
+## Core features
 
 | Feature | Benefit |
 | --- | --- |
-| **Multi-operator roster** | Distinct bots (`grok`, `hermes`, `agy`, peers such as `nie` / `feynman`, …), each with its own identity, secrets, logs, and CLI backend — a real team on day one. |
-| **Tag-to-talk + peer wake** | `@bot` brings the right mind into the thread; peers wake each other so collaboration flows operator-to-operator as well as principal-to-bot. |
-| **Multi-round collab** | Lead assigns, peers deliver, return-notify synthesizes, plain-language DONE closes the epoch — structured multi-agent delivery in any shared room. |
-| **Streaming activity chrome** | Live thinking / working phases in a single answer bubble that resolves to one polished final reply. |
-| **Busy-aware UX** | Mid-wake messages earn visible acknowledgment and orderly follow-up enqueue — the room stays responsive at full pace. |
-| **Per-room parallel wakes** | Ordered depth inside a room; true parallelism across rooms so DMs, Agency, and project channels all move at once. |
-| **Project-aware cwd** | Channels map to `~/IdeaProjects/<slug>` (or pinned paths); every wake lands in the filesystem that matches the conversation. |
-| **Readable attachments** | Photos and files download under policy and enter the wake path for grounded `read_file` — agents see what you share. |
-| **Phone-reachable edge** | Local Rocket.Chat + HTTPS tunnel: full principal control from a handset with the same operators you run on desktop. |
-| **Git-canonical ops** | Integration code lives in this repo; live host is deploy-only — PRs, parity checks, and `after-merge-deploy` as one professional loop. |
-| **Control plane & health** | In-chat commands and health cards for status and operator control without leaving Rocket.Chat. |
-| **Feature + improvement packs** | Specs, test plans, and ranked improvements ship beside the code — product intent and runtime stay aligned. |
+| **Multi-operator roster** | Distinct bots with their own identities, backends, secrets, and launchd processes—ready on day one |
+| **Tag-to-talk + peer wake** | `@bot` brings the right mind into the thread; peers can wake each other (`RC_PEER_TAG_WAKE` default on) |
+| **Multi-round collaboration** | Structured lead → fan-out → gated return-notify → `DONE` close-out for reliable multi-hop delivery |
+| **Streaming activity chrome** | Live thinking / working phases resolve into one polished final reply |
+| **Busy-aware UX** | Mid-wake messages receive visible acknowledgment and orderly enqueue so the room stays responsive |
+| **Per-room parallel wakes** | Ordered depth inside a room; true cross-room parallelism so DMs, project channels, and Agency all move at once |
+| **Project-aware cwd** | Channels map to `~/IdeaProjects/<slug>` (or pinned paths); every wake lands in the matching filesystem |
+| **Readable attachments** | Photos and files download under policy and are injected into the wake prompt for grounded `read_file` |
+| **Phone-reachable edge** | Local Rocket.Chat + HTTPS (ngrok) puts your entire agent team in your pocket |
+| **Git-canonical operations** | Integration code lives here; live host is deploy-only with parity checks and one-command promote |
+| **Control plane & health** | In-chat commands and health cards for status and operator control without leaving Rocket.Chat |
+| **Feature + improvement packs** | Full research → spec → implementation plan → test plan bundles ship beside the code |
 
-## What stands out
-
-**First-class operator identities**  
-Every bot is a real Rocket.Chat user with its own WebSocket bridge, state, and launchd KeepAlive. Mentions, reactions, and room membership feel like staffing a team — because you are.
-
-**Collaboration as a first-class product**  
-Multi-round collab is a full protocol: open with the lead, fan out with intent, return with gated quality, close with DONE. Shared rooms become long-horizon multi-agent workspaces.
-
-**A wake UX that matches the pace of work**  
-Streaming chrome, busy acknowledgment, and shared update budgeting keep the chat surface alive while operators run serious CLI sessions in the background.
-
-**Concurrency that matches how you actually work**  
-Per-room locks keep a channel coherent; cross-room parallelism (`RC_WAKE_MAX_CONCURRENT`, default **16**) keeps DMs and every other room hot in parallel.
-
-**Project locality at the core**  
-`--cwd` follows the room’s project map. Chat and filesystem stay locked together across your entire IdeaProjects landscape from a single integration.
-
-**One repository for product and runtime power**  
-`ops/rocketchat/` (Stage 2 source), `new-features/`, `docs/improvements/`, and pure test suites live here together — ship features and the ops that run them from the same tree.
+**Voice / RC Call paths are retired.** See [`docs/VOICE_RETIRED.md`](docs/VOICE_RETIRED.md).
 
 ## Built for
 
 - **Principals** who want a permanent multi-agent workforce on one Mac, reachable from phone or laptop through Rocket.Chat.
-- **Agent builders** who add new operators (RC user, secrets, launchd, tag-to-talk) and plug them into an existing roster fast.
-- **Reviewers and operators** who promote through pure gates, deploy parity, and live kickstart with confidence.
-
-## Product scope
-
-| Focus | Notes |
-| --- | --- |
-| Text-first multi-operator Rocket.Chat | Primary product surface |
-| Git canonical → deploy to host | Stage 2 model; live holds secrets, state, venv, launchd |
-| Pure policy modules + live wire | Reviewable code with host-side runtime |
-| Voice / RC Call | Retired — see [`docs/VOICE_RETIRED.md`](docs/VOICE_RETIRED.md) |
+- **Agent builders** who need to add new operators (RC user + secrets + launchd + tag-to-talk + backend) and plug them into an existing roster quickly.
+- **Reviewers and operators** who want pure test gates, deploy parity, and confidence when promoting changes to the live host.
 
 ---
 
