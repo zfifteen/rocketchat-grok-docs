@@ -41,4 +41,4 @@ tail -f ~/logs/rocketchat-agy-wake/operator-agent.log
 - Expect untagged channel chatter to wake agy.
 - Confuse **standalone `agy` operator** with **NF-SPEC-04/10 dual-peer collab rooms** (armed private channels via `RC_AGY_COLLAB` + room profile). Both can coexist; different paths.
 
-See also: `MULTI_OPERATOR.md`, collab specs under `rocketchat-grok-docs/new-features/04-*` and `10-*`.
+See also: `MULTI_OPERATOR.md`, collab specs under `rocketchat-agents/new-features/04-*` and `10-*`.

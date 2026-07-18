@@ -3,7 +3,7 @@
 **Audience:** another AI agent (or human operator) setting up a **new bot identity** on the Velocity Works Rocket.Chat stack, parallel to `grok` and `hermes`.  
 **Last updated:** 2026-07-14 (four live operators: grok, hermes, agy, claude; peer tag wake default on)  
 **Runtime home:** `~/.grok/agency/ops/rocketchat/`  
-**Docs map:** `~/IdeaProjects/rocketchat-grok-docs/`  
+**Docs map:** `~/IdeaProjects/rocketchat-agents/`  
 **Ops runbook:** `~/.grok/agency/ops/ROCKETCHAT.md`  
 **Live roster hub:** `~/.grok/agency/ops/rocketchat/MULTI_OPERATOR.md`
 
@@ -634,7 +634,7 @@ open http://127.0.0.1:3000
 | Hermes runbook | `…/HERMES_OPERATOR.md` |
 | No-dup rule | `…/NO_DUPLICATE_POSTS.md` |
 | Canonical ops runbook | `~/.grok/agency/ops/ROCKETCHAT.md` |
-| This docs repo | `~/IdeaProjects/rocketchat-grok-docs/` |
+| This docs repo | `~/IdeaProjects/rocketchat-agents/` |
 | Config example env names | `…/config.example` |
 
 ---
@@ -666,7 +666,7 @@ You are done when **all** of the following are true:
 
 ```text
 Set up as a Rocket.Chat bot on the Velocity Works stack.
-Follow: ~/IdeaProjects/rocketchat-grok-docs/docs/agent-integration-guide.md
+Follow: ~/IdeaProjects/rocketchat-agents/docs/agent-integration-guide.md
 Runtime: ~/.grok/agency/ops/rocketchat/
 Create unique RC user + secrets (mode 600) + logs + state + launchd.
 Use rc_operator_agent.py with isolated RC_SECRETS_PATH / RC_LOG_DIR / RC_STATE_PATH.

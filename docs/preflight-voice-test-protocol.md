@@ -104,13 +104,13 @@ Without token auth + moderator claims (or a self-hosted Jitsi with lobby off), *
 
 ```bash
 # Headless (default)
-python3 ~/IdeaProjects/rocketchat-grok-docs/docs/tools/preflight_dual_peer_jitsi_audio.py
+python3 ~/IdeaProjects/rocketchat-agents/docs/tools/preflight_dual_peer_jitsi_audio.py
 
 # Watch browsers
-python3 ~/IdeaProjects/rocketchat-grok-docs/docs/tools/preflight_dual_peer_jitsi_audio.py --headed
+python3 ~/IdeaProjects/rocketchat-agents/docs/tools/preflight_dual_peer_jitsi_audio.py --headed
 
 # Reuse a URL
-python3 ~/IdeaProjects/rocketchat-grok-docs/docs/tools/preflight_dual_peer_jitsi_audio.py \
+python3 ~/IdeaProjects/rocketchat-agents/docs/tools/preflight_dual_peer_jitsi_audio.py \
   --join-url 'https://meet.jit.si/Agency…'
 ```
 

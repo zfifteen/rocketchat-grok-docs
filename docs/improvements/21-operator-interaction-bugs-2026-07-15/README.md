@@ -3,7 +3,7 @@
 **Status:** collab synthesis complete (lead grok) — specs + pure tests landed; runtime wire-in is residual  
 **Runtime:** `~/.grok/agency/ops/rocketchat/`  
 **Mirror:** this repo `ops/rocketchat/`  
-**Source report:** principal asked for log-based bug report (DM); fix+test collab in #rocketchat-grok-docs.
+**Source report:** principal asked for log-based bug report (DM); fix+test collab in #rocketchat-agents.
 
 ## Goal
 

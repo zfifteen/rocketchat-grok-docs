@@ -94,7 +94,7 @@ Overrides live only in:
 
 | Item | Path |
 | --- | --- |
-| Docs home | `~/IdeaProjects/rocketchat-grok-docs/` |
+| Docs home | `~/IdeaProjects/rocketchat-agents/` |
 
 Pointers only — does not replace `ops/ROCKETCHAT.md` for live URLs/status.
 When runtime moves, update both the live runbook and these docs.

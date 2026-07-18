@@ -4,7 +4,7 @@
 **Captured:** 2026-07-12  
 **Owner:** Operator + principal (when resumed)  
 **Related runtime:** `~/.grok/agency/ops/rocketchat/`  
-**Related docs:** this repo (`rocketchat-grok-docs`)
+**Related docs:** this repo (`rocketchat-agents`)
 
 ---
 

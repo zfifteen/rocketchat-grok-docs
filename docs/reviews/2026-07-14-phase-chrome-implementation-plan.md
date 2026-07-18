@@ -262,7 +262,7 @@ Full “never second post” remediation stays under review **H4**; this plan on
 | Runtime | `~/.grok/agency/ops/rocketchat/.venv` |
 | Tests | `cd ~/.grok/agency/ops/rocketchat && .venv/bin/python -m pytest tests/test_nf02_streaming_telemetry.py tests/test_usability_contracts.py -q` |
 | Lint | project norms; `py_compile` on touched modules |
-| Docs | this repo `rocketchat-grok-docs` |
+| Docs | this repo `rocketchat-agents` |
 | Benchmarking | count `chat.update` calls in mock; wall elapsed to first chrome in integration test |
 
 ---
@@ -344,8 +344,8 @@ Full “never second post” remediation stays under review **H4**; this plan on
 | `~/.grok/agency/ops/rocketchat/wake/wake_lib.py` | `compose_final_with_thoughts` (thoughts above answer today) |
 | `~/.grok/agency/ops/rocketchat/NO_DUPLICATE_POSTS.md` | One answer bubble rule |
 | `~/.grok/agency/ops/rocketchat/tests/USABILITY_CONTRACTS.md` | §7 bubble contract |
-| `rocketchat-grok-docs/new-features/02-streaming-thinking-telemetry/implementation-plan.md` | NF-IP-02 prior T0/T1 framing |
-| `rocketchat-grok-docs/docs/reviews/2026-07-14-rc-integration-heavy-review.md` | M13, H4, M5 |
+| `rocketchat-agents/new-features/02-streaming-thinking-telemetry/implementation-plan.md` | NF-IP-02 prior T0/T1 framing |
+| `rocketchat-agents/docs/reviews/2026-07-14-rc-integration-heavy-review.md` | M13, H4, M5 |
 
 **External:** none required.
 

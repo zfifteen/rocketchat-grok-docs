@@ -12,7 +12,7 @@ Paths use `~` for the principal home. Expand to absolute form in launchd plists.
 
 | Path | Role |
 | --- | --- |
-| `~/IdeaProjects/rocketchat-grok-docs/` | Docs map + **Stage 2 canonical** integration code |
+| `~/IdeaProjects/rocketchat-agents/` | Docs map + **Stage 2 canonical** integration code |
 | `…/README.md` | Entry point |
 | `…/ops/rocketchat/` | **Write source** for operators, compose examples, tests |
 | `…/ops/rocketchat/scripts/after-merge-deploy.sh` | Deploy git → live + kickstart |
@@ -40,7 +40,7 @@ DM default Grok `--cwd` is `~/.grok/agency`.
 
 ## 3. Integration software (live deploy target)
 
-**Canonical edit path:** `~/IdeaProjects/rocketchat-grok-docs/ops/rocketchat/`  
+**Canonical edit path:** `~/IdeaProjects/rocketchat-agents/ops/rocketchat/`  
 **Live root (deploy only):** `~/.grok/agency/ops/rocketchat/`
 
 Do **not** day-to-day edit live; use `after-merge-deploy.sh` after git merge.
@@ -233,7 +233,7 @@ PGS must not wake the operator path for notify; it is a separate REST poster.
 ~/logs/ngrok-rocketchat/       # tunnel
 
 ~/IdeaProjects/
-├── rocketchat-grok-docs/      # THIS documentation project
+├── rocketchat-agents/      # THIS documentation project
 ├── prime-gap-structure/       # example channel project + hourly notify
 └── <other channel slugs>/
 ```

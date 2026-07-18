@@ -68,5 +68,5 @@ Runtime (not always in this git tree): `~/.grok/agency/ops/rocketchat/wake/`
 
 ## Context
 
-- Principal + hermes thread in #rocketchat-grok-docs (2026-07-16)  
+- Principal + hermes thread in #rocketchat-agents (2026-07-16)  
 - Related: [improvement 21 operator interaction bugs](docs/improvements/21-operator-interaction-bugs-2026-07-15/)

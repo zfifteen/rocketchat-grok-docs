@@ -5,7 +5,7 @@
 **Owner surface (historical):** Path C (`rc_call_bot.py`) first; optional xAI Voice Agent track second  
 **Superseding research (recommended path):** [research-voice-media-path.md](research-voice-media-path.md)  
 **Canonical runtime:** `~/.grok/agency/ops/rocketchat/`  
-**This doc lives in:** `~/IdeaProjects/rocketchat-grok-docs/`
+**This doc lives in:** `~/IdeaProjects/rocketchat-agents/`
 
 > **2026-07-10 research update:** Production-viable media should use **Grok Voice Agent API** (SIP/WebRTC/LiveKit transports) with Rocket.Chat as **control plane**. Path C (Playwright + public Jitsi) remains a useful failure analysis and optional lab track; it is **not** the recommended production media plane. See the research doc for the decision matrix and target architecture.
 
@@ -392,8 +392,8 @@ Estimates assume one engineer familiar with this Mac’s agency stack; WebRTC su
 
 | Path | Role |
 | --- | --- |
-| `~/IdeaProjects/rocketchat-grok-docs/docs/message-flow.md` | Path A/B/C documentation |
-| `~/IdeaProjects/rocketchat-grok-docs/docs/related-systems.md` | Twilio adjacent, not RC voice |
+| `~/IdeaProjects/rocketchat-agents/docs/message-flow.md` | Path A/B/C documentation |
+| `~/IdeaProjects/rocketchat-agents/docs/related-systems.md` | Twilio adjacent, not RC voice |
 | `~/.grok/agency/ops/rocketchat/call/README.md` | Path C design + limits |
 | `~/.grok/agency/ops/rocketchat/call/rc_call_bot.py` | Join, Playwright, VAD, STT/TTS loop |
 | `~/.grok/agency/ops/rocketchat/wake/rc_operator_agent.py` | `spawn_call_bot`, `handle_videoconf_call` |

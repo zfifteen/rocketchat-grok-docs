@@ -157,7 +157,7 @@ Docs touch:
 
 ## Source analysis references
 
-- Principal diagnosis: tool approval → lost error detail (2026-07-16 #rocketchat-grok-docs)  
+- Principal diagnosis: tool approval → lost error detail (2026-07-16 #rocketchat-agents)  
 - Hermes analysis (same thread): backend permission matrix + FINAL_ERR thinness  
 - Code: `wake_lib.approval_mode_cli_flags`, `hermes_approval_cli_flags`, `build_agy_wake_argv`  
 - Code: `wake_telemetry.choose_final_body`, `format_final_err`  

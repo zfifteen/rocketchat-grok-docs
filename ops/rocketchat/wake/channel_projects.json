@@ -1,7 +1,7 @@
 {
   "_comment": "Optional channel \u2192 project overrides. Keys: room name, #name, or slug. Values: absolute path or path relative to ~/IdeaProjects. Only DMs default to ~/.grok/agency; all channels use IdeaProjects (auto slug / create if missing).",
   "Prime-Gap-Structure": "prime-gap-structure",
-  "rocketchat-grok-docs": "rocketchat-grok-docs",
+  "rocketchat-agents": "rocketchat-agents",
   "math-research": "math-research",
   "cognitive-distortion-layer": "cognitive-distortion-layer",
   "grok-build": "powergrok",

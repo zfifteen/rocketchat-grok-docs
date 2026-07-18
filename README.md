@@ -13,7 +13,7 @@ installs stay on the host under `~/.grok/agency/` (and related OS paths).
 | **Created** | 2026-07-10 |
 | **Status** | Live stack documented as deployed on the principal Mac |
 | **Canonical ops runbook (runtime)** | `~/.grok/agency/ops/ROCKETCHAT.md` |
-| **This project** | `~/IdeaProjects/rocketchat-grok-docs/` |
+| **This project** | `~/IdeaProjects/rocketchat-agents/` |
 
 ---
 
@@ -25,7 +25,7 @@ installs stay on the host under `~/.grok/agency/` (and related OS paths).
 4. **[Operations](docs/operations.md)** — status, restart, tests, common fixes  
 5. **[Related systems](docs/related-systems.md)** — agency spine, PGS hourly notify, Twilio  
 6. **[Multi-agent integration guide](docs/agent-integration-guide.md)** — **for other agents:** create RC user, secrets, parallel operator, tag-to-talk, launchd, verify  
-6a. **[Multi-round collab](docs/multi-round-collab.md)** — Grok lead, return-notify, principal open = `@grok` only, quality-gated hops (issue [#2](https://github.com/zfifteen/rocketchat-grok-docs/issues/2); mirror [`ops/rocketchat/`](ops/rocketchat/))  
+6a. **[Multi-round collab](docs/multi-round-collab.md)** — Grok lead, return-notify, principal open = `@grok` only, quality-gated hops (issue [#2](https://github.com/zfifteen/rocketchat-agents/issues/2); mirror [`ops/rocketchat/`](ops/rocketchat/))  
 7. **[Improvements backlog](docs/improvements/INDEX.md)** — ranked suggestions; each has requirements + test plan  
 8. **[Code review findings (2026-07-14)](docs/reviews/2026-07-14-rc-integration-heavy-review.md)** — Heavy review backlog (crash safety, media, **C1 voice retired 2026-07-17**, docs drift)  
 9. **[Goal: install refactor → public share](docs/goals/install-refactor-then-public-share.md)** — **parked program** (local config first, package later; not started)  
@@ -83,7 +83,7 @@ CLI  (--cwd agency or ~/IdeaProjects/<channel>)
 | Always-on jobs | `~/Library/LaunchAgents/` | macOS launchd requirement |
 | Logs / ledgers | `~/logs/rocketchat-dm-wake/` | Long-running process I/O |
 | Channel workspaces | `~/IdeaProjects/<slug>/` | Grok works *in* project dirs |
-| This documentation | `~/IdeaProjects/rocketchat-grok-docs/` | Map + canonical ops code under `ops/` |
+| This documentation | `~/IdeaProjects/rocketchat-agents/` | Map + canonical ops code under `ops/` |
 
 **Stage 2 (current):** git (`ops/rocketchat/`) is canonical. After merge:  
 `./ops/rocketchat/scripts/after-merge-deploy.sh` (deploy + parity + kickstart).  

@@ -1,7 +1,7 @@
 # Rocket.Chat multi-agent integration guide (runtime pointer)
 
 **Canonical copy (keep in sync):**  
-`~/IdeaProjects/rocketchat-grok-docs/docs/agent-integration-guide.md`
+`~/IdeaProjects/rocketchat-agents/docs/agent-integration-guide.md`
 
 Use that file when onboarding another agent (Codex, a second Hermes profile, etc.) onto this Rocket.Chat workspace.
 

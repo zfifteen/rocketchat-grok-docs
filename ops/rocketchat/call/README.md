@@ -72,7 +72,7 @@ Principal **Call grok** on phone/desktop. Media backend is selected by flag.
 ## Preflight (bot / dual-peer — NOT phone media)
 
 ```bash
-python3 ~/IdeaProjects/rocketchat-grok-docs/docs/tools/preflight_dual_peer_jitsi_audio.py
+python3 ~/IdeaProjects/rocketchat-agents/docs/tools/preflight_dual_peer_jitsi_audio.py
 # expect RESULT: PASS and remote_rms >= 0.008
 # This only proves Mac Chromium + voice room mesh audio. It does NOT prove iPhone mic.
 ```

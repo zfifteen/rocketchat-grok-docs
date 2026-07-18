@@ -10,4 +10,4 @@ Move portable software (wake/call/compose/tests) into an IdeaProjects app repo; 
 
 ## Won't do reason
 
-Full cutover of live KeepAlive operator into a new IdeaProjects app repo is deferred: live path remains under ~/.grok/agency/ops/rocketchat with install-launchd.sh + rc_config path overrides as the portable surface. Docs map is rocketchat-grok-docs. Extract can resume later without data loss.
+Full cutover of live KeepAlive operator into a new IdeaProjects app repo is deferred: live path remains under ~/.grok/agency/ops/rocketchat with install-launchd.sh + rc_config path overrides as the portable surface. Docs map is rocketchat-agents. Extract can resume later without data loss.

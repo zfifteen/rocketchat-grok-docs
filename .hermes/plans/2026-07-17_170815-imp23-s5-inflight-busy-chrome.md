@@ -323,7 +323,7 @@ def _enqueue_pending(...) -> bool:
 ### Task 0: Branch + baseline
 
 ```bash
-cd /Users/velocityworks/IdeaProjects/rocketchat-grok-docs
+cd /Users/velocityworks/IdeaProjects/rocketchat-agents
 git checkout main && git pull origin main
 git checkout -b feat/imp-23-s5-inflight-busy-chrome
 python3 ops/rocketchat/tests/test_wake_ux_imp23.py

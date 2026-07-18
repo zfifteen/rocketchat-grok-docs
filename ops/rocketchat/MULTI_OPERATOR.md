@@ -91,7 +91,7 @@ Legacy principal-only helper `should_handle_dm_message` remains for older call s
 | `HERMES_OPERATOR.md` | Hermes-specific runbook |
 | `AGY_OPERATOR.md` | Antigravity (`agy`) runbook |
 | `AGENT_INTEGRATION_GUIDE.md` | Pointer to full onboarding guide |
-| `~/IdeaProjects/rocketchat-grok-docs/docs/agent-integration-guide.md` | Canonical multi-agent checklist |
+| `~/IdeaProjects/rocketchat-agents/docs/agent-integration-guide.md` | Canonical multi-agent checklist |
 | `wake/RC_MULTI_ROUND_COLLAB_PLAYBOOK.md` | Multi-round collab playbook |
 | `FEYNMAN_OPERATOR.md` | Feynman-mechanism Hermes peer runbook |
 | `NIE_OPERATOR.md` | NIE z-mapping Hermes peer runbook |

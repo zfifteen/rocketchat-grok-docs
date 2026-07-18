@@ -1,6 +1,6 @@
 # Multi-round agent collab in Rocket.Chat
 
-**Status:** shipped in runtime ops; issue [#2](https://github.com/zfifteen/rocketchat-grok-docs/issues/2) hardening (P0 + partial P1) on branch `issue-2-multi-round-collab-hardening`  
+**Status:** shipped in runtime ops; issue [#2](https://github.com/zfifteen/rocketchat-agents/issues/2) hardening (P0 + partial P1) on branch `issue-2-multi-round-collab-hardening`  
 **Runtime home:** `~/.grok/agency/ops/rocketchat/`  
 **Reviewable mirror in this repo:** [`ops/rocketchat/`](../ops/rocketchat/)
 
@@ -124,6 +124,6 @@ Confirm logs show `config applied` / `ws_connected` and greppable `multi-round` 
 
 ## Related
 
-- Issue: https://github.com/zfifteen/rocketchat-grok-docs/issues/2  
+- Issue: https://github.com/zfifteen/rocketchat-agents/issues/2  
 - Implementation plan: issue comment on #2  
 - NF-SPEC-10 (different contract): [`new-features/10-lead-peer-full-collab/`](../new-features/10-lead-peer-full-collab/)

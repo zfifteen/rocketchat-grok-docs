@@ -3,7 +3,7 @@
 **Created:** 2026-07-10  
 **Last reviewed:** 2026-07-12 (feature **10** full chain: SPEC + IP + TP)  
 **Status:** Documentation package — runtime may partially exist for some items; each bundle states status  
-**Project:** `~/IdeaProjects/rocketchat-grok-docs`  
+**Project:** `~/IdeaProjects/rocketchat-agents`  
 **Live integration:** `~/.grok/agency/ops/rocketchat/`
 
 This folder is the **entry index** for product-level feature documentation. Each feature lives in its **own numbered subfolder** (a documentation bundle). Features **1–3** and **5–9** have a full four-layer chain (research · spec · test plan · impl plan); feature **4** has research + NF-SPEC-04 + NF-TP-04 + profiles (impl plan deferred; **09** covers enablement); feature **10** has **NF-SPEC-10** + **NF-IP-10** + **NF-TP-10** (research optional / inherited from 04).

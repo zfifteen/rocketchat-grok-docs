@@ -4,7 +4,7 @@
 **Mode:** Heavy effort (12 read-only specialists + leader synthesis)  
 **Status:** Findings only — **not implemented**. Use this doc to drive later work.  
 **Runtime code:** `~/.grok/agency/ops/rocketchat/`  
-**Docs package:** this repo (`rocketchat-grok-docs`)  
+**Docs package:** this repo (`rocketchat-agents`)  
 **Runbook:** `~/.grok/agency/ops/ROCKETCHAT.md`
 
 **Related same-day context:**

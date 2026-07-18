@@ -1,7 +1,7 @@
 # IMP-22 implementation notes
 
 **Status:** Implemented 2026-07-16 (hermes)  
-**Issue:** https://github.com/zfifteen/rocketchat-grok-docs/issues/4
+**Issue:** https://github.com/zfifteen/rocketchat-agents/issues/4
 
 ## Docs-repo (this PR)
 

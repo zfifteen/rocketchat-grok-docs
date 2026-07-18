@@ -169,7 +169,7 @@ NF-IP-10 GOAL-00: Ensure NF-SPEC-10 and NF-IP-10 are linked from new-features in
 | --- | --- |
 | **Scope** | Docs links only |
 | **Out** | Any Python |
-| **Files** | `rocketchat-grok-docs/new-features/**` |
+| **Files** | `rocketchat-agents/new-features/**` |
 | **Verify** | Links resolve; README lists NF-IP-10 |
 | **Next** | GOAL-01 |
 

@@ -1,7 +1,7 @@
 # Improvements index
 
 **Last updated:** 2026-07-18  
-**Parent project:** [rocketchat-grok-docs README](../../README.md)  
+**Parent project:** [rocketchat-agents README](../../README.md)  
 **Scope:** Suggested configuration and ops improvements for the live Rocket.Chat ↔ Grok stack (`~/.grok/agency/ops/rocketchat/` and related paths).
 
 This folder is the **backlog package**: each item has a requirements document and a test plan. Items are ordered **most impactful first** (same ranking as the configuration deep dive). Status here is documentation only until work is implemented.

@@ -6,7 +6,7 @@
 
 | Role | Path |
 | --- | --- |
-| **Canonical source (edit here)** | `rocketchat-grok-docs/ops/rocketchat/` |
+| **Canonical source (edit here)** | `rocketchat-agents/ops/rocketchat/` |
 | Live deploy target (do not edit day-to-day) | `~/.grok/agency/ops/rocketchat/` |
 | Secrets (never in git) | `~/.grok/agency/secrets/rocketchat*.env` |
 | Logs | `~/logs/rocketchat-*-wake/` |
@@ -24,7 +24,7 @@ edit ops/rocketchat/  →  pure tests  →  commit / PR  →  merge main
 ```
 
 ```bash
-cd /Users/velocityworks/IdeaProjects/rocketchat-grok-docs
+cd /Users/velocityworks/IdeaProjects/rocketchat-agents
 
 # 1. Develop in git
 # 2. Pure gates
@@ -89,7 +89,7 @@ git push
 ## Pure tests (no RC network)
 
 ```bash
-cd /Users/velocityworks/IdeaProjects/rocketchat-grok-docs
+cd /Users/velocityworks/IdeaProjects/rocketchat-agents
 
 python3 ops/rocketchat/tests/test_wake_inflight_ux_s5.py   # 22/22
 python3 ops/rocketchat/tests/test_wake_ux_imp23.py          # 16/16

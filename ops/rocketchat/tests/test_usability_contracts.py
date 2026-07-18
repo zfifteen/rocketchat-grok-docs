@@ -1430,7 +1430,7 @@ def test_imp15_compose_secrets_dry() -> None:
         assert "no mongodb volume found" not in (r2.stderr or "")
 
         # T3 — docs link backup/generate + upgrade steps
-        docs = Path.home() / "IdeaProjects" / "rocketchat-grok-docs" / "docs"
+        docs = Path.home() / "IdeaProjects" / "rocketchat-agents" / "docs"
         ops = (docs / "operations.md").read_text(encoding="utf-8")
         fsmap = (docs / "filesystem-map.md").read_text(encoding="utf-8")
         for label, text in (("operations.md", ops), ("filesystem-map.md", fsmap)):

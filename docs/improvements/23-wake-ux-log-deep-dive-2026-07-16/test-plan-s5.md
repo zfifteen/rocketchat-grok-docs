@@ -90,7 +90,7 @@ PR **may** merge without full L\* if pure green and residuals listed. Do **not**
 **Command:**
 
 ```bash
-cd /Users/velocityworks/IdeaProjects/rocketchat-grok-docs
+cd /Users/velocityworks/IdeaProjects/rocketchat-agents
 python3 ops/rocketchat/tests/test_wake_inflight_ux_s5.py
 ```
 
@@ -218,7 +218,7 @@ python3 tests/test_usability_contracts.py
 
 ```bash
 python3 -c "import sys; sys.path.insert(0, '$HOME/.grok/agency/ops/rocketchat/wake'); import wake_inflight_ux as m; print(m.__file__)"
-python3 /Users/velocityworks/IdeaProjects/rocketchat-grok-docs/ops/rocketchat/scripts/rc_wake_digest.py --hours 2
+python3 /Users/velocityworks/IdeaProjects/rocketchat-agents/ops/rocketchat/scripts/rc_wake_digest.py --hours 2
 # logs: ~/logs/rocketchat-*-wake/operator-agent.log
 ```
 
